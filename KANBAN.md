@@ -10,9 +10,9 @@
 
 | Estado | Cantidad |
 |--------|----------|
-| ✅ Completado | 2 |
+| ✅ Completado | 5 |
 | 🔄 En Progreso | 1 |
-| 📋 Pendiente | 21 |
+| 📋 Pendiente | 18 |
 
 ---
 
@@ -27,14 +27,31 @@
   - `.env.local` creado con template
   - Documentación de variables incluida
 
+- [x] **SETUP-04** | Configurar Tailwind personalizado
+  - Paleta de colores slate/blue
+  - Colores success, warning, destructive
+  - Animaciones personalizadas
+  - Modo oscuro configurado
+
+- [x] **DB-01** | Crear schema de base de datos
+  - Archivo `supabase/schema.sql` con todas las tablas
+  - RLS y políticas de acceso configuradas
+  - Tipos TypeScript en `lib/types/database.ts`
+  - Vistas útiles y realtime habilitado
+
+- [x] **LAYOUT-01** | Estructura de carpetas dashboard
+  - Route group `(dashboard)` con layout protegido
+  - Páginas: pos, gastos, reportes, productos, config
+  - Componentes: DashboardShell, Sidebar, MobileNav
+
 ---
 
 ## 🔄 EN PROGRESO
 
-- [ ] **SETUP-04** | Configurar Tailwind personalizado
-  - Paleta de colores del diseño
-  - Configuración de modo oscuro
-  - Variables CSS personalizadas
+- [ ] **POS-01** | Implementar layout principal del dashboard
+  - Sidebar funcional con navegación
+  - Navegación móvil inferior
+  - Header con estado del turno
 
 ---
 
