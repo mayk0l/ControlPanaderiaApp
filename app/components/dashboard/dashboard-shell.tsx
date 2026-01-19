@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { User } from "@supabase/supabase-js";
-import { Profile } from "@/lib/types";
+import { Profile, Shift } from "@/lib/types";
 import { Sidebar } from "./sidebar";
 import { MobileNav } from "./mobile-nav";
 import { Header } from "./header";
@@ -11,9 +11,10 @@ interface DashboardShellProps {
   children: React.ReactNode;
   user: User;
   profile: Profile | null;
+  currentShift: Shift | null;
 }
 
-export function DashboardShell({ children, user, profile }: DashboardShellProps) {
+export function DashboardShell({ children, user, profile, currentShift }: DashboardShellProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const role = profile?.role || 'vendedor';
 
@@ -36,6 +37,9 @@ export function DashboardShell({ children, user, profile }: DashboardShellProps)
           ${isCollapsed ? 'md:pl-20' : 'md:pl-64'}
         `}
       >
+        {/* Header con estado del turno */}
+        <Header currentShift={currentShift} />
+
         <div className="p-4 md:p-8 max-w-7xl mx-auto">
           {children}
         </div>

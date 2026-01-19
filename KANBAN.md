@@ -10,9 +10,9 @@
 
 | Estado | Cantidad |
 |--------|----------|
-| ✅ Completado | 5 |
+| ✅ Completado | 6 |
 | 🔄 En Progreso | 1 |
-| 📋 Pendiente | 18 |
+| 📋 Pendiente | 17 |
 
 ---
 
@@ -44,14 +44,20 @@
   - Páginas: pos, gastos, reportes, productos, config
   - Componentes: DashboardShell, Sidebar, MobileNav
 
+- [x] **UI-01** | Componentes UI base personalizados
+  - Button, Input, Badge extendidos
+  - DashboardCard, FormField, Counter creados
+  - StatCard, EmptyState, LoadingSpinner
+
 ---
 
 ## 🔄 EN PROGRESO
 
-- [ ] **POS-01** | Implementar layout principal del dashboard
-  - Sidebar funcional con navegación
-  - Navegación móvil inferior
-  - Header con estado del turno
+- [ ] **POS-02** | Gestión de turnos
+  - Modal abrir turno con monto inicial caja
+  - Modal cerrar turno con resumen
+  - Estado de turno en header
+  - Server actions para turnos
 
 ---
 

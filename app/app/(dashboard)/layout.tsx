@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { Shift } from "@/lib/types/database";
 
 export default async function DashboardLayout({
   children,
@@ -21,8 +22,22 @@ export default async function DashboardLayout({
     .eq("id", user.id)
     .single();
 
+  // Obtener turno activo
+  const { data: currentShift } = await supabase
+    .from("shifts")
+    .select("*")
+    .eq("user_id", user.id)
+    .is("closed_at", null)
+    .order("opened_at", { ascending: false })
+    .limit(1)
+    .single();
+
   return (
-    <DashboardShell user={user} profile={profile}>
+    <DashboardShell 
+      user={user} 
+      profile={profile}
+      currentShift={currentShift as Shift | null}
+    >
       {children}
     </DashboardShell>
   );
