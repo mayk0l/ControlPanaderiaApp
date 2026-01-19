@@ -10,9 +10,9 @@
 
 | Estado | Cantidad |
 |--------|----------|
-| ✅ Completado | 8 |
+| ✅ Completado | 10 |
 | 🔄 En Progreso | 1 |
-| 📋 Pendiente | 15 |
+| 📋 Pendiente | 13 |
 
 ---
 
@@ -60,14 +60,24 @@
   - Cálculo de kilos y venta estimada
   - Server actions para actualizar bandejas
 
+- [x] **POS-04** | Catálogo de productos y carrito
+  - Grilla de productos con categorías
+  - Componente carrito con items
+  - Server actions para ventas
+
+- [x] **GASTOS-01** | CRUD de gastos
+  - Formulario con selector de origen
+  - Lista de gastos con totales por categoría
+  - Server actions para crear/eliminar
+
 ---
 
 ## 🔄 EN PROGRESO
 
-- [ ] **POS-04** | Catálogo de productos y carrito
-  - Grilla de productos con categorías
-  - Componente carrito con items
-  - Server actions para ventas
+- [ ] **REPORTS-01** | Reportes básicos
+  - Selector de turnos cerrados
+  - Resumen por línea (PAN / PRODUCTOS)
+  - Cálculo de utilidad neta
 
 ---
 
