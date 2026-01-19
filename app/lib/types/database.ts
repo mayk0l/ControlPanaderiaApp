@@ -239,10 +239,11 @@ export interface ExpenseUpdate {
 
 export interface CartItem {
   product_id: string;
-  name: string;
+  product_name: string;
   price: number;
   cost: number;
   quantity: number;
+  subtotal: number;
 }
 
 // =============================================

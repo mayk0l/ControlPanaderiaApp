@@ -1,16 +1,21 @@
 import { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { Shift } from "@/lib/types/database";
-import { BandejaCounter } from "@/components/pos";
+import { Shift, Product, Category } from "@/lib/types/database";
+import { BandejaCounter, SalesTerminal } from "@/components/pos";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DashboardCard } from "@/components/ui/dashboard-card";
 import { Clock } from "lucide-react";
+import { getSalesByShift } from "@/lib/actions/sales";
 
 export const metadata: Metadata = {
   title: "Terminal de Venta | Control Panadería",
   description: "Punto de venta para registrar ventas y producción de pan",
 };
+
+interface ProductWithCategory extends Product {
+  category: Category | null;
+}
 
 export default async function POSPage() {
   const supabase = await createClient();
@@ -61,6 +66,34 @@ export default async function POSPage() {
     );
   }
 
+  // Obtener productos y categorías
+  const [productsResult, categoriesResult, salesResult] = await Promise.all([
+    supabase
+      .from("products")
+      .select(`*, category:categories(*)`)
+      .eq("is_active", true)
+      .order("name"),
+    supabase
+      .from("categories")
+      .select("*")
+      .order("name"),
+    getSalesByShift(shift.id),
+  ]);
+
+  const products = (productsResult.data || []) as ProductWithCategory[];
+  const categories = (categoriesResult.data || []) as Category[];
+  const sales = salesResult || [];
+  
+  const totalSales = sales.reduce((sum, sale) => sum + sale.total, 0);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("es-CL", {
+      style: "currency",
+      currency: "CLP",
+      minimumFractionDigits: 0,
+    }).format(amount);
+  };
+
   return (
     <div className="animate-fade-in">
       <header className="mb-8">
@@ -77,33 +110,35 @@ export default async function POSPage() {
         </p>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Columna izquierda: Ventas NO PAN */}
-        <DashboardCard title="🛒 Ventas NO PAN" borderColor="blue">
-          <p className="text-muted-foreground py-8 text-center">
-            Próximamente: Catálogo de productos y carrito
-          </p>
-        </DashboardCard>
-        
-        {/* Columna derecha: Pan y resumen */}
-        <div className="space-y-8">
-          {/* Contador de bandejas */}
+      <div className="space-y-8">
+        {/* Contador de bandejas + Resumen */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <BandejaCounter shift={shift} />
           
-          {/* Resumen del turno */}
-          <DashboardCard title="📊 Resumen del Turno" borderColor="green">
-            <div className="grid grid-cols-2 gap-4 py-4">
+          <DashboardCard title="📊 Resumen del Turno" borderColor="green" className="lg:col-span-2">
+            <div className="grid grid-cols-3 gap-4 py-4">
               <div className="text-center p-4 bg-muted/50 rounded-xl">
-                <p className="text-xs text-muted-foreground font-medium mb-1">Ventas</p>
-                <p className="text-2xl font-bold">0</p>
+                <p className="text-xs text-muted-foreground font-medium mb-1">Ventas NO PAN</p>
+                <p className="text-2xl font-bold">{sales.length}</p>
               </div>
               <div className="text-center p-4 bg-muted/50 rounded-xl">
-                <p className="text-xs text-muted-foreground font-medium mb-1">Total</p>
-                <p className="text-2xl font-bold text-success">$0</p>
+                <p className="text-xs text-muted-foreground font-medium mb-1">Total NO PAN</p>
+                <p className="text-2xl font-bold text-success">{formatCurrency(totalSales)}</p>
+              </div>
+              <div className="text-center p-4 bg-muted/50 rounded-xl">
+                <p className="text-xs text-muted-foreground font-medium mb-1">Caja Inicial</p>
+                <p className="text-2xl font-bold text-primary">{formatCurrency(shift.opening_cash)}</p>
               </div>
             </div>
           </DashboardCard>
         </div>
+        
+        {/* Terminal de ventas */}
+        <SalesTerminal
+          shift={shift}
+          products={products}
+          categories={categories}
+        />
       </div>
     </div>
   );

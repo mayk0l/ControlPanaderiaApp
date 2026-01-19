@@ -10,9 +10,9 @@
 
 | Estado | Cantidad |
 |--------|----------|
-| ✅ Completado | 6 |
+| ✅ Completado | 8 |
 | 🔄 En Progreso | 1 |
-| 📋 Pendiente | 17 |
+| 📋 Pendiente | 15 |
 
 ---
 
@@ -49,15 +49,25 @@
   - DashboardCard, FormField, Counter creados
   - StatCard, EmptyState, LoadingSpinner
 
----
-
-## 🔄 EN PROGRESO
-
-- [ ] **POS-02** | Gestión de turnos
+- [x] **POS-02** | Gestión de turnos
   - Modal abrir turno con monto inicial caja
   - Modal cerrar turno con resumen
   - Estado de turno en header
   - Server actions para turnos
+
+- [x] **POS-03** | Contador de bandejas de pan
+  - Componente BandejaCounter con +/-
+  - Cálculo de kilos y venta estimada
+  - Server actions para actualizar bandejas
+
+---
+
+## 🔄 EN PROGRESO
+
+- [ ] **POS-04** | Catálogo de productos y carrito
+  - Grilla de productos con categorías
+  - Componente carrito con items
+  - Server actions para ventas
 
 ---
 
