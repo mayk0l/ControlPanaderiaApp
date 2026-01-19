@@ -28,7 +28,7 @@ export default async function ReportsPage() {
 
       {shifts.length === 0 ? (
         <EmptyState
-          icon={<BarChart3 className="w-12 h-12" />}
+          icon={BarChart3}
           title="Sin datos de reportes"
           description="Completa tu primer turno para ver los reportes de ventas y utilidades"
         />

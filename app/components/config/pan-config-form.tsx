@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { FormField } from '@/components/ui/form-field';
 import { updatePanConfig } from '@/lib/actions/config';
 import type { PanConfig } from '@/lib/types/database';
@@ -90,26 +89,26 @@ export function PanConfigForm({ config }: PanConfigFormProps) {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField label="Kilos por bandeja" required>
-            <Input
-              type="number"
-              min="0"
-              step="0.1"
-              value={formData.kilos_por_bandeja}
-              onChange={(e) => setFormData({ ...formData, kilos_por_bandeja: e.target.value })}
-              placeholder="20"
-            />
-          </FormField>
+          <FormField 
+            label="Kilos por bandeja" 
+            required
+            type="number"
+            min="0"
+            step="0.1"
+            value={formData.kilos_por_bandeja}
+            onChange={(e) => setFormData({ ...formData, kilos_por_bandeja: e.target.value })}
+            placeholder="20"
+          />
 
-          <FormField label="Precio por kilo ($)" required>
-            <Input
-              type="number"
-              min="0"
-              value={formData.precio_por_kilo}
-              onChange={(e) => setFormData({ ...formData, precio_por_kilo: e.target.value })}
-              placeholder="1100"
-            />
-          </FormField>
+          <FormField 
+            label="Precio por kilo ($)" 
+            required
+            type="number"
+            min="0"
+            value={formData.precio_por_kilo}
+            onChange={(e) => setFormData({ ...formData, precio_por_kilo: e.target.value })}
+            placeholder="1100"
+          />
         </div>
 
         {/* Preview del cálculo */}

@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { FormField } from '@/components/ui/form-field';
 import { ModalPortal } from '@/components/ui/modal-portal';
 import { createProduct, updateProduct } from '@/lib/actions/products';
@@ -99,35 +98,34 @@ export function ProductForm({ categories, product, onClose, onSuccess }: Product
             </div>
           )}
 
-          <FormField label="Nombre del producto" required>
-            <Input
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Ej: Empanada de pino"
-              autoFocus
-            />
-          </FormField>
+          <FormField 
+            label="Nombre del producto" 
+            required
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            placeholder="Ej: Empanada de pino"
+            autoFocus
+          />
 
           <div className="grid grid-cols-2 gap-4">
-            <FormField label="Precio venta ($)" required>
-              <Input
-                type="number"
-                min="0"
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                placeholder="0"
-              />
-            </FormField>
+            <FormField 
+              label="Precio venta ($)" 
+              required
+              type="number"
+              min="0"
+              value={formData.price}
+              onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+              placeholder="0"
+            />
 
-            <FormField label="Costo ($)">
-              <Input
-                type="number"
-                min="0"
-                value={formData.cost}
-                onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
-                placeholder="0"
-              />
-            </FormField>
+            <FormField 
+              label="Costo ($)"
+              type="number"
+              min="0"
+              value={formData.cost}
+              onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
+              placeholder="0"
+            />
           </div>
 
           {margin && parseFloat(margin) > 0 && (
@@ -139,11 +137,14 @@ export function ProductForm({ categories, product, onClose, onSuccess }: Product
             </div>
           )}
 
-          <FormField label="Categoría">
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-foreground">
+              Categoría
+            </label>
             <select
               value={formData.category_id}
               onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-              className="w-full h-10 px-3 rounded-lg border bg-background text-sm"
+              className="w-full h-11 px-4 rounded-xl border-2 border-input bg-background text-base"
             >
               <option value="">Sin categoría</option>
               {categories.map((cat) => (
@@ -152,7 +153,7 @@ export function ProductForm({ categories, product, onClose, onSuccess }: Product
                 </option>
               ))}
             </select>
-          </FormField>
+          </div>
 
           <div className="flex gap-3 pt-4">
             <Button
