@@ -32,10 +32,12 @@ interface ShiftStatsData {
   gastosCaja: number;
   gastosPan: number;
   gastosNoPan: number;
-  ventaPanEstimada: number;
+  gastosGeneral: number;
+  brutoPan: number;
+  brutoNoPan: number;
   ventasNoPan: number;
-  expectedCash: number;
-  netTotal: number;
+  cashInDrawer: number;
+  netoFinal: number;
 }
 
 export function CloseShiftModal({ isOpen, onClose, onSuccess, shift }: CloseShiftModalProps) {
@@ -72,7 +74,7 @@ export function CloseShiftModal({ isOpen, onClose, onSuccess, shift }: CloseShif
     }
 
     const adjustment = parseFloat(panAdjustment) || 0;
-    const expectedCash = stats?.expectedCash || 0;
+    const expectedCash = stats?.cashInDrawer || 0;
 
     const closingData: ClosingData = {
       pan_adjustment: adjustment,
@@ -97,7 +99,7 @@ export function CloseShiftModal({ isOpen, onClose, onSuccess, shift }: CloseShif
   };
 
   const difference = stats && countedCash 
-    ? parseFloat(countedCash) - stats.expectedCash 
+    ? parseFloat(countedCash) - stats.cashInDrawer 
     : 0;
 
   const formatCurrency = (amount: number) => {
@@ -164,7 +166,7 @@ export function CloseShiftModal({ isOpen, onClose, onSuccess, shift }: CloseShif
                     <span className="text-xs">Venta Pan Estimada</span>
                   </div>
                   <p className="text-lg font-bold">
-                    {formatCurrency(stats.ventaPanEstimada)}
+                    {formatCurrency(stats.brutoPan)}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {shift.bandejas_sacadas} bandejas
@@ -178,7 +180,7 @@ export function CloseShiftModal({ isOpen, onClose, onSuccess, shift }: CloseShif
                   <div>
                     <p className="text-sm text-muted-foreground">Efectivo esperado en caja</p>
                     <p className="text-2xl font-bold text-primary">
-                      {formatCurrency(stats.expectedCash)}
+                      {formatCurrency(stats.cashInDrawer)}
                     </p>
                   </div>
                   <div className="text-right text-sm text-muted-foreground">

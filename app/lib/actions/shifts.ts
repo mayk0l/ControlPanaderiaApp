@@ -149,6 +149,48 @@ export async function closeShift(
 }
 
 /**
+ * Actualizar bandejas del turno
+ */
+export async function updateBandejas(
+  shiftId: string,
+  bandejas: number
+): Promise<ShiftActionResult> {
+  const supabase = await createClient();
+  
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, error: "No autenticado" };
+  }
+
+  // Verificar que el turno está abierto y pertenece al usuario
+  const { data: shift, error: shiftError } = await supabase
+    .from("shifts")
+    .select("id")
+    .eq("id", shiftId)
+    .eq("opened_by", user.id)
+    .eq("status", "OPEN")
+    .single();
+
+  if (shiftError || !shift) {
+    return { success: false, error: "Turno no encontrado o cerrado" };
+  }
+
+  const { data, error } = await supabase
+    .from("shifts")
+    .update({ bandejas_sacadas: bandejas })
+    .eq("id", shiftId)
+    .select()
+    .single();
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath("/pos");
+  return { success: true, data: data as Shift };
+}
+
+/**
  * Obtener estadísticas del turno actual
  */
 export async function getShiftStats(shiftId: string) {
@@ -159,12 +201,11 @@ export async function getShiftStats(shiftId: string) {
     return null;
   }
 
-  // Obtener turno
+  // Obtener turno (sin filtrar por usuario para permitir ver turnos de otros)
   const { data: shift } = await supabase
     .from("shifts")
     .select("*")
     .eq("id", shiftId)
-    .eq("opened_by", user.id)
     .single();
 
   if (!shift) return null;
@@ -178,22 +219,28 @@ export async function getShiftStats(shiftId: string) {
   // Gastos del turno
   const { data: expenses } = await supabase
     .from("expenses")
-    .select("id, amount, origin")
+    .select("id, amount, origin, from_cash")
     .eq("shift_id", shiftId);
 
   const totalSales = sales?.reduce((sum: number, s: { total: number }) => sum + s.total, 0) || 0;
   const totalExpenses = expenses?.reduce((sum: number, e: { amount: number }) => sum + e.amount, 0) || 0;
-  const gastosCaja = expenses?.filter((e: { origin: string }) => e.origin === "GENERAL").reduce((sum: number, e: { amount: number }) => sum + e.amount, 0) || 0;
+  const gastosCaja = expenses?.filter((e: { from_cash: boolean }) => e.from_cash).reduce((sum: number, e: { amount: number }) => sum + e.amount, 0) || 0;
   const gastosPan = expenses?.filter((e: { origin: string }) => e.origin === "PAN").reduce((sum: number, e: { amount: number }) => sum + e.amount, 0) || 0;
   const gastosNoPan = expenses?.filter((e: { origin: string }) => e.origin === "NO_PAN").reduce((sum: number, e: { amount: number }) => sum + e.amount, 0) || 0;
+  const gastosGeneral = expenses?.filter((e: { origin: string }) => e.origin === "GENERAL").reduce((sum: number, e: { amount: number }) => sum + e.amount, 0) || 0;
   
   // Calcular venta de pan estimada
   const configSnapshot = shift.config_snapshot as { kilos_por_bandeja: number; precio_por_kilo: number };
   const kilosPorBandeja = configSnapshot?.kilos_por_bandeja || 3.2;
   const precioPorKilo = configSnapshot?.precio_por_kilo || 2000;
-  const ventaPanEstimada = (shift.bandejas_sacadas || 0) * kilosPorBandeja * precioPorKilo;
+  const brutoPan = (shift.bandejas_sacadas || 0) * kilosPorBandeja * precioPorKilo;
+  const brutoNoPan = totalSales;
   
-  const expectedCash = shift.opening_cash + totalSales - gastosCaja;
+  // Efectivo esperado en caja
+  const cashInDrawer = shift.opening_cash + brutoPan + brutoNoPan - gastosCaja;
+  
+  // Utilidad neta
+  const netoFinal = (brutoPan - gastosPan) + (brutoNoPan - gastosNoPan) - gastosGeneral;
 
   return {
     shift: shift as Shift,
@@ -204,9 +251,11 @@ export async function getShiftStats(shiftId: string) {
     gastosCaja,
     gastosPan,
     gastosNoPan,
-    ventaPanEstimada,
-    ventasNoPan: shift.ventas_no_pan || 0,
-    expectedCash,
-    netTotal: totalSales - totalExpenses,
+    gastosGeneral,
+    brutoPan,
+    brutoNoPan,
+    ventasNoPan: totalSales,
+    cashInDrawer,
+    netoFinal,
   };
 }

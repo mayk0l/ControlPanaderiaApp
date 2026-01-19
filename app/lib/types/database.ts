@@ -117,6 +117,11 @@ export interface ClosingData {
   counted_cash: number;
   expected_cash: number;
   difference: number;
+  final_bandejas?: number;
+  bruto_pan?: number;
+  bruto_no_pan?: number;
+  gastos_caja?: number;
+  neto_final?: number;
 }
 
 export interface Shift {
