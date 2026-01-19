@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
+import { ModalPortal } from "@/components/ui/modal-portal";
 import { openShift } from "@/lib/actions/shifts";
 import { DollarSign, Play } from "lucide-react";
 
@@ -42,10 +43,12 @@ export function OpenShiftModal({ isOpen, onClose, onSuccess }: OpenShiftModalPro
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-card rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-fade-in">
-        {/* Header */}
-        <div className="bg-primary p-6 text-primary-foreground">
+    <ModalPortal>
+      <div className="fixed inset-0 z-[100] overflow-y-auto bg-black/50 backdrop-blur-sm">
+        <div className="flex min-h-full items-center justify-center p-4">
+          <div className="bg-card rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-fade-in">
+            {/* Header */}
+            <div className="bg-primary p-6 text-primary-foreground">
           <div className="flex items-center gap-3">
             <div className="bg-white/20 rounded-full p-2">
               <Play className="h-6 w-6" />
@@ -105,7 +108,9 @@ export function OpenShiftModal({ isOpen, onClose, onSuccess }: OpenShiftModalPro
             </Button>
           </div>
         </form>
+          </div>
+        </div>
       </div>
-    </div>
+    </ModalPortal>
   );
 }

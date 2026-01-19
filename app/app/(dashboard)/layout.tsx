@@ -1,13 +1,11 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { LoadingOverlay } from "@/components/ui/loading";
 import { Shift } from "@/lib/types/database";
 
-export default async function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+async function DashboardContent({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -22,12 +20,13 @@ export default async function DashboardLayout({
     .eq("id", user.id)
     .single();
 
-  // Obtener turno activo
+  // Obtener turno activo del día
+  const today = new Date().toISOString().split('T')[0];
   const { data: currentShift } = await supabase
     .from("shifts")
     .select("*")
-    .eq("user_id", user.id)
-    .is("closed_at", null)
+    .eq("date", today)
+    .eq("status", "OPEN")
     .order("opened_at", { ascending: false })
     .limit(1)
     .single();
@@ -40,5 +39,17 @@ export default async function DashboardLayout({
     >
       {children}
     </DashboardShell>
+  );
+}
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <Suspense fallback={<LoadingOverlay />}>
+      <DashboardContent>{children}</DashboardContent>
+    </Suspense>
   );
 }

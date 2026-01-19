@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormField } from '@/components/ui/form-field';
+import { ModalPortal } from '@/components/ui/modal-portal';
 import { createProduct, updateProduct } from '@/lib/actions/products';
 import type { Product, Category } from '@/lib/types/database';
 import { X } from 'lucide-react';
@@ -75,12 +76,14 @@ export function ProductForm({ categories, product, onClose, onSuccess }: Product
     : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-fade-in">
-      <div className="bg-card rounded-2xl border shadow-xl w-full max-w-md mx-4 animate-slide-up">
-        <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-bold">
-            {isEditing ? 'Editar Producto' : 'Nuevo Producto'}
-          </h2>
+    <ModalPortal>
+      <div className="fixed inset-0 z-[100] overflow-y-auto bg-black/50">
+        <div className="flex min-h-full items-center justify-center p-4">
+          <div className="bg-card rounded-2xl border shadow-xl w-full max-w-md animate-slide-up">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-lg font-bold">
+                {isEditing ? 'Editar Producto' : 'Nuevo Producto'}
+              </h2>
           <button
             onClick={onClose}
             className="p-2 rounded-lg hover:bg-muted transition-colors"
@@ -170,7 +173,9 @@ export function ProductForm({ categories, product, onClose, onSuccess }: Product
             </Button>
           </div>
         </form>
+          </div>
+        </div>
       </div>
-    </div>
+    </ModalPortal>
   );
 }

@@ -3,6 +3,7 @@
 import { useState, useTransition, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
+import { ModalPortal } from "@/components/ui/modal-portal";
 import { closeShift, getShiftStats } from "@/lib/actions/shifts";
 import { Shift, ClosingData } from "@/lib/types/database";
 import { 
@@ -108,19 +109,21 @@ export function CloseShiftModal({ isOpen, onClose, onSuccess, shift }: CloseShif
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-card rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-fade-in max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="bg-destructive p-6 text-destructive-foreground">
-          <div className="flex items-center gap-3">
-            <div className="bg-white/20 rounded-full p-2">
-              <Square className="h-6 w-6" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold">Cerrar Turno</h2>
-              <p className="text-sm text-destructive-foreground/80">
-                Revisa el resumen antes de cerrar
-              </p>
+    <ModalPortal>
+      <div className="fixed inset-0 z-[100] overflow-y-auto bg-black/50 backdrop-blur-sm">
+        <div className="flex min-h-full items-center justify-center p-4">
+          <div className="bg-card rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-fade-in max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="bg-destructive p-6 text-destructive-foreground">
+              <div className="flex items-center gap-3">
+                <div className="bg-white/20 rounded-full p-2">
+                  <Square className="h-6 w-6" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold">Cerrar Turno</h2>
+                  <p className="text-sm text-destructive-foreground/80">
+                    Revisa el resumen antes de cerrar
+                  </p>
             </div>
           </div>
         </div>
@@ -279,7 +282,9 @@ export function CloseShiftModal({ isOpen, onClose, onSuccess, shift }: CloseShif
             </Button>
           </div>
         </form>
+          </div>
+        </div>
       </div>
-    </div>
+    </ModalPortal>
   );
 }
