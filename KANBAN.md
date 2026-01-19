@@ -10,9 +10,9 @@
 
 | Estado | Cantidad |
 |--------|----------|
-| ✅ Completado | 10 |
+| ✅ Completado | 11 |
 | 🔄 En Progreso | 1 |
-| 📋 Pendiente | 13 |
+| 📋 Pendiente | 12 |
 
 ---
 
@@ -70,14 +70,19 @@
   - Lista de gastos con totales por categoría
   - Server actions para crear/eliminar
 
+- [x] **REPORTS-01** | Reportes básicos
+  - Selector de turnos cerrados
+  - Resumen por línea (PAN / PRODUCTOS)
+  - Cálculo de utilidad neta
+
 ---
 
 ## 🔄 EN PROGRESO
 
-- [ ] **REPORTS-01** | Reportes básicos
-  - Selector de turnos cerrados
-  - Resumen por línea (PAN / PRODUCTOS)
-  - Cálculo de utilidad neta
+- [ ] **PROD-01** | CRUD de productos y categorías
+  - Tabla de productos con margen
+  - Formulario crear/editar producto
+  - Gestión de categorías
 
 ---
 
