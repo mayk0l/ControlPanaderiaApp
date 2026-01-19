@@ -10,9 +10,9 @@
 
 | Estado | Cantidad |
 |--------|----------|
-| ✅ Completado | 11 |
+| ✅ Completado | 12 |
 | 🔄 En Progreso | 1 |
-| 📋 Pendiente | 12 |
+| 📋 Pendiente | 11 |
 
 ---
 
@@ -75,14 +75,19 @@
   - Resumen por línea (PAN / PRODUCTOS)
   - Cálculo de utilidad neta
 
+- [x] **PROD-01** | CRUD de productos y categorías
+  - Tabla de productos con margen
+  - Formulario crear/editar producto
+  - Gestión de categorías
+
 ---
 
 ## 🔄 EN PROGRESO
 
-- [ ] **PROD-01** | CRUD de productos y categorías
-  - Tabla de productos con margen
-  - Formulario crear/editar producto
-  - Gestión de categorías
+- [ ] **CONFIG-01** | Página de configuración
+  - Toggle tema claro/oscuro
+  - Parámetros de pan (kilos/bandeja, precio/kilo)
+  - Lista de usuarios con roles
 
 ---
 

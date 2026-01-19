@@ -1,11 +1,22 @@
 import { Metadata } from "next";
+import { getPanConfig, getProfiles } from "@/lib/actions/config";
+import { PanConfigForm, UsersList, ThemeSelector } from "@/components/config";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Configuración | Control Panadería",
   description: "Ajustes del sistema y gestión de usuarios",
 };
 
-export default function ConfigPage() {
+export default async function ConfigPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  const [panConfig, users] = await Promise.all([
+    getPanConfig(),
+    getProfiles(),
+  ]);
+
   return (
     <div className="animate-fade-in">
       <header className="mb-8">
@@ -17,36 +28,15 @@ export default function ConfigPage() {
         </p>
       </header>
 
-      {/* TODO: Implementar configuración */}
       <div className="space-y-8">
-        <div className="bg-card rounded-2xl border p-6">
-          <h2 className="text-lg font-bold mb-4">Apariencia</h2>
-          <p className="text-muted-foreground">Próximamente: Toggle modo oscuro</p>
-        </div>
+        {/* Apariencia */}
+        <ThemeSelector />
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="bg-card rounded-2xl border p-6">
-            <h2 className="text-lg font-bold mb-4">Parámetros PAN</h2>
-            <p className="text-muted-foreground">Próximamente: Kilos por bandeja, precio por kilo</p>
-          </div>
-          
-          <div className="bg-card rounded-2xl border p-6">
-            <h2 className="text-lg font-bold mb-4">Agregar Usuario</h2>
-            <p className="text-muted-foreground">Próximamente: Formulario de usuarios</p>
-          </div>
-        </div>
+        {/* Configuración de pan */}
+        <PanConfigForm config={panConfig} />
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="bg-card rounded-2xl border p-6">
-            <h2 className="text-lg font-bold mb-4">Usuarios del Sistema</h2>
-            <p className="text-muted-foreground">Próximamente: Tabla de usuarios</p>
-          </div>
-          
-          <div className="bg-card rounded-2xl border p-6">
-            <h2 className="text-lg font-bold mb-4">Historial de Turnos</h2>
-            <p className="text-muted-foreground">Próximamente: Lista de turnos</p>
-          </div>
-        </div>
+        {/* Usuarios */}
+        <UsersList users={users} currentUserId={user?.id} />
       </div>
     </div>
   );
