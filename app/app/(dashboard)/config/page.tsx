@@ -12,6 +12,15 @@ export default async function ConfigPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   
+  // Obtener perfil para verificar si es admin
+  const { data: currentProfile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user?.id)
+    .single();
+  
+  const isAdmin = currentProfile?.role === 'admin';
+  
   const [panConfig, users] = await Promise.all([
     getPanConfig(),
     getProfiles(),
@@ -36,7 +45,7 @@ export default async function ConfigPage() {
         <PanConfigForm config={panConfig} />
         
         {/* Usuarios */}
-        <UsersList users={users} currentUserId={user?.id} />
+        <UsersList users={users} currentUserId={user?.id} isAdmin={isAdmin} />
       </div>
     </div>
   );
