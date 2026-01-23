@@ -46,7 +46,8 @@ export async function getShiftWithDetails(shiftId: string) {
   const { data: expenses } = await supabase
     .from('expenses')
     .select('*')
-    .eq('shift_id', shiftId);
+    .eq('shift_id', shiftId)
+    .order('created_at', { ascending: false });
   
   // Obtener ventas con items
   const { data: sales } = await supabase
@@ -55,13 +56,73 @@ export async function getShiftWithDetails(shiftId: string) {
       *,
       sale_items (*)
     `)
-    .eq('shift_id', shiftId);
+    .eq('shift_id', shiftId)
+    .order('created_at', { ascending: false });
   
   return {
     shift,
     expenses: expenses || [],
     sales: sales || [],
   };
+}
+
+/**
+ * Obtiene el detalle de productos vendidos agrupados
+ */
+export async function getProductsSoldDetail(shiftId: string) {
+  const supabase = await createClient();
+  
+  // Obtener todos los items vendidos en el turno
+  const { data: saleItems } = await supabase
+    .from('sale_items')
+    .select(`
+      product_id,
+      product_name,
+      price,
+      cost,
+      quantity,
+      subtotal,
+      sales!inner(shift_id)
+    `)
+    .eq('sales.shift_id', shiftId);
+  
+  if (!saleItems || saleItems.length === 0) {
+    return [];
+  }
+  
+  // Agrupar por producto
+  const productMap = new Map<string, {
+    product_id: string;
+    product_name: string;
+    price: number;
+    cost: number;
+    quantity: number;
+    subtotal: number;
+    profit: number;
+  }>();
+  
+  saleItems.forEach((item) => {
+    const existing = productMap.get(item.product_id);
+    if (existing) {
+      existing.quantity += item.quantity;
+      existing.subtotal += item.subtotal;
+      existing.profit += (item.price - item.cost) * item.quantity;
+    } else {
+      productMap.set(item.product_id, {
+        product_id: item.product_id,
+        product_name: item.product_name,
+        price: item.price,
+        cost: item.cost,
+        quantity: item.quantity,
+        subtotal: item.subtotal,
+        profit: (item.price - item.cost) * item.quantity,
+      });
+    }
+  });
+  
+  // Convertir a array y ordenar por cantidad vendida
+  return Array.from(productMap.values())
+    .sort((a, b) => b.quantity - a.quantity);
 }
 
 /**
