@@ -24,10 +24,11 @@ export default async function POSPage() {
     redirect("/auth/login");
   }
 
-  // Obtener turno activo (cualquier turno OPEN, no solo del usuario actual)
+  // Obtener turno activo del usuario actual
   const { data: currentShift } = await supabase
     .from("shifts")
     .select("*")
+    .eq("opened_by", user.id)
     .eq("status", "OPEN")
     .order("opened_at", { ascending: false })
     .limit(1)

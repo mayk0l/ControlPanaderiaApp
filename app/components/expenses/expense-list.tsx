@@ -12,6 +12,7 @@ import { Trash2, Receipt } from "lucide-react";
 
 interface ExpenseListProps {
   expenses: Expense[];
+  showHistorical?: boolean;
 }
 
 const ORIGIN_CONFIG: Record<ExpenseOrigin, { label: string; emoji: string; variant: "default" | "secondary" | "warning" }> = {
@@ -20,7 +21,7 @@ const ORIGIN_CONFIG: Record<ExpenseOrigin, { label: string; emoji: string; varia
   NO_PAN: { label: "No Pan", emoji: "📦", variant: "secondary" },
 };
 
-export function ExpenseList({ expenses }: ExpenseListProps) {
+export function ExpenseList({ expenses, showHistorical = false }: ExpenseListProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -61,7 +62,10 @@ export function ExpenseList({ expenses }: ExpenseListProps) {
   const total = expenses.reduce((sum, e) => sum + e.amount, 0);
 
   return (
-    <DashboardCard title="📋 Gastos del Turno" borderColor="default">
+    <DashboardCard 
+      title={showHistorical ? "📋 Historial de Gastos" : "📋 Gastos del Turno"} 
+      borderColor="default"
+    >
       {/* Resumen */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <div className="p-3 bg-muted/50 rounded-xl text-center">
@@ -116,15 +120,17 @@ export function ExpenseList({ expenses }: ExpenseListProps) {
                   -{formatCurrency(expense.amount)}
                 </p>
                 
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => handleDelete(expense.id)}
-                  disabled={isPending}
-                  className="text-muted-foreground hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                {!showHistorical && (
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => handleDelete(expense.id)}
+                    disabled={isPending}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             );
           })}

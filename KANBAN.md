@@ -2,7 +2,7 @@
 
 > **Stack:** Next.js 14+ (App Router) + Supabase + Tailwind CSS + Vercel
 > 
-> **Última actualización:** Enero 2026
+> **Última actualización:** 23 Enero 2026
 
 ---
 
@@ -10,9 +10,9 @@
 
 | Estado | Cantidad |
 |--------|----------|
-| ✅ Completado | 12 |
-| 🔄 En Progreso | 1 |
-| 📋 Pendiente | 11 |
+| ✅ Completado | 14 |
+| 🔄 En Progreso | 0 |
+| 📋 Pendiente | 5 (issues Kevin) |
 
 ---
 
@@ -49,9 +49,14 @@
   - DashboardCard, FormField, Counter creados
   - StatCard, EmptyState, LoadingSpinner
 
+- [x] **AUTH-01** | Login con Supabase Auth
+  - Página de login con branding personalizado
+  - Middleware de protección de rutas
+  - Redirección automática a /pos
+
 - [x] **POS-02** | Gestión de turnos
   - Modal abrir turno con monto inicial caja
-  - Modal cerrar turno con resumen
+  - Modal cerrar turno con resumen y arqueo
   - Estado de turno en header
   - Server actions para turnos
 
@@ -80,14 +85,16 @@
   - Formulario crear/editar producto
   - Gestión de categorías
 
+- [x] **CONFIG-01** | Página de configuración
+  - Toggle tema claro/oscuro
+  - Parámetros de pan (kilos/bandeja, precio/kilo)
+  - Lista de usuarios con roles (cambiar rol)
+
 ---
 
 ## 🔄 EN PROGRESO
 
-- [ ] **CONFIG-01** | Página de configuración
-  - Toggle tema claro/oscuro
-  - Parámetros de pan (kilos/bandeja, precio/kilo)
-  - Lista de usuarios con roles
+*Ninguna tarea en progreso*
 
 ---
 

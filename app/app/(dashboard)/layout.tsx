@@ -20,12 +20,11 @@ async function DashboardContent({ children }: { children: React.ReactNode }) {
     .eq("id", user.id)
     .single();
 
-  // Obtener turno activo del día
-  const today = new Date().toISOString().split('T')[0];
+  // Obtener turno activo del usuario actual
   const { data: currentShift } = await supabase
     .from("shifts")
     .select("*")
-    .eq("date", today)
+    .eq("opened_by", user.id)
     .eq("status", "OPEN")
     .order("opened_at", { ascending: false })
     .limit(1)

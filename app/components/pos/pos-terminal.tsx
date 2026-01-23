@@ -5,7 +5,7 @@ import { DashboardCard } from '@/components/ui/dashboard-card';
 import { Button } from '@/components/ui/button';
 import { Shift, Product, Category } from '@/lib/types/database';
 import { createSale } from '@/lib/actions/sales';
-import { Search, Tags, ShoppingCart, X, Lock, CheckCircle2 } from 'lucide-react';
+import { Search, Tags, ShoppingCart, X, Lock, CheckCircle2, Plus, Minus, Trash2 } from 'lucide-react';
 import { formatMoney } from '@/lib/utils';
 import { ModalPortal } from '@/components/ui/modal-portal';
 
@@ -74,6 +74,14 @@ export function POSTerminal({ shift, products, categories }: POSTerminalProps) {
 
   const removeFromCart = (index: number) => {
     setCart(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateCartItemQty = (index: number, delta: number) => {
+    setCart(prev => prev.map((item, i) => {
+      if (i !== index) return item;
+      const newQty = Math.max(1, item.qty + delta);
+      return { ...item, qty: newQty };
+    }));
   };
 
   const clearCart = () => {
@@ -244,16 +252,55 @@ export function POSTerminal({ shift, products, categories }: POSTerminalProps) {
               </div>
 
               <div className="p-6 space-y-4">
-                <div className="space-y-2 max-h-48 overflow-y-auto">
+                <div className="space-y-2 max-h-60 overflow-y-auto">
                   {cart.map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-center p-2 bg-muted/50 rounded-lg">
-                      <div>
-                        <p className="font-bold text-sm">{item.name}</p>
-                        <p className="text-xs text-muted-foreground">{item.qty} x {formatMoney(item.price)}</p>
+                    <div key={idx} className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl border border-border">
+                      {/* Info del producto */}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm truncate">{item.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatMoney(item.price)} c/u
+                        </p>
                       </div>
-                      <span className="font-bold">{formatMoney(item.qty * item.price)}</span>
+
+                      {/* Controles de cantidad */}
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => updateCartItemQty(idx, -1)}
+                          disabled={item.qty <= 1}
+                          className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80 disabled:opacity-30"
+                        >
+                          <Minus size={14} />
+                        </button>
+                        <span className="w-8 text-center font-black">{item.qty}</span>
+                        <button
+                          onClick={() => updateCartItemQty(idx, 1)}
+                          className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90"
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </div>
+
+                      {/* Subtotal */}
+                      <span className="font-bold text-sm w-20 text-right">
+                        {formatMoney(item.qty * item.price)}
+                      </span>
+
+                      {/* Eliminar */}
+                      <button
+                        onClick={() => removeFromCart(idx)}
+                        className="w-8 h-8 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex items-center justify-center"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
                   ))}
+
+                  {cart.length === 0 && (
+                    <div className="text-center py-6 text-muted-foreground">
+                      <p className="text-sm">No hay productos en el carrito</p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-between items-center p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800">
@@ -275,7 +322,7 @@ export function POSTerminal({ shift, products, categories }: POSTerminalProps) {
                   <Button
                     className="flex-1"
                     onClick={processSale}
-                    disabled={isPending}
+                    disabled={isPending || cart.length === 0}
                   >
                     {isPending ? 'Procesando...' : 'Confirmar'}
                   </Button>
