@@ -158,7 +158,22 @@
 - **Utilidad neta del negocio**
 - Historial consolidado
 
-### RF-06.5: Historial Editable (Admin)
+### RF-06.5: Resumen Semanal y Mensual ✅ *NUEVO*
+- **Resumen Semanal** (Lunes a Domingo):
+  - Total ventas de PAN (con cantidad de bandejas)
+  - Total ventas de PRODUCTOS (con cantidad de turnos)
+  - Total combinado de ventas
+- **Resumen Mensual** (Mes calendario):
+  - Total ventas de PAN (con cantidad de bandejas)
+  - Total ventas de PRODUCTOS (con cantidad de turnos)
+  - Total combinado de ventas
+- **Detalle Semanal por Producto**:
+  - Tabla con ventas diarias de cada producto (Lun-Dom)
+  - Total de unidades vendidas por producto
+  - Monto total por producto
+  - Totales por día y total general
+
+### RF-06.6: Historial Editable (Admin)
 - Edición de valores históricos (bandejas, ventas)
 - Corrección de errores pasados
 
@@ -177,4 +192,4 @@
 
 ---
 
-*Documento de requerimientos funcionales - Versión 1.0*
+*Documento de requerimientos funcionales - Versión 1.0.0 - Proyecto Completado*

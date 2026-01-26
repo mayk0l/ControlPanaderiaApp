@@ -2,7 +2,8 @@
 
 Sistema integral de gestión para panaderías - Control de ventas, producción, gastos y análisis financiero.
 
-![Status](https://img.shields.io/badge/status-en%20desarrollo-yellow)
+![Status](https://img.shields.io/badge/status-producción-green)
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![Docs](https://img.shields.io/badge/docs-disponible-blue)
 
 ---
@@ -17,11 +18,24 @@ Sistema integral de gestión para panaderías - Control de ventas, producción, 
 - 🍞 **Control de Producción** - Seguimiento de bandejas de pan con cálculo automático de kilos y valor
 - 💰 **Gestión de Turnos** - Apertura y cierre con arqueo de caja
 - 📊 **Reportes Financieros** - Análisis de utilidad por línea de negocio (PAN vs Productos)
+- 📈 **Resumen Semanal/Mensual** - Totales de venta Pan y Productos por separado con detalle diario
 - 📦 **Catálogo de Productos** - Gestión con costos, precios y márgenes
 - 💸 **Control de Gastos** - Clasificación por origen (General, PAN, Productos)
 - 👥 **Multi-usuario** - Roles de administrador y vendedor
 - 🌙 **Modo Oscuro** - Interfaz moderna y adaptable
 - 📱 **Responsive** - Funciona en móvil, tablet y escritorio
+
+---
+
+## 🚀 Stack Tecnológico
+
+| Tecnología | Uso |
+|------------|-----|
+| **Next.js 15** | Framework React con App Router |
+| **TypeScript** | Tipado estático |
+| **Supabase** | Base de datos PostgreSQL + Auth |
+| **Tailwind CSS** | Estilos |
+| **Lucide React** | Iconos |
 
 ---
 
@@ -44,18 +58,45 @@ Toda la documentación del proyecto se encuentra en la carpeta [`/docs`](./docs/
 
 | Fase | Estado |
 |------|--------|
-| ✅ Maqueta/Prototipo | Entregada por cliente |
+| ✅ Maqueta/Prototipo | Completada |
 | ✅ Documentación | Completada |
-| 🔄 Definición de Stack | Pendiente |
-| 🔄 Desarrollo | Pendiente |
-| 🔄 Testing | Pendiente |
-| 🔄 Despliegue | Pendiente |
+| ✅ Definición de Stack | Completada |
+| ✅ Desarrollo | **Completado** |
+| ✅ Testing | Completado |
+| ✅ Despliegue | Completado |
+
+### 🎉 Proyecto en Producción
+
+El proyecto ha sido completado exitosamente y se encuentra en **fase de mantenimiento**.
 
 ---
 
-## 🚀 Stack Tecnológico
+## 🛠️ Instalación y Desarrollo
 
-*Por definir - El ingeniero de software definirá las tecnologías a utilizar.*
+```bash
+# Clonar el repositorio
+git clone <repo-url>
+
+# Ir a la carpeta de la app
+cd app
+
+# Instalar dependencias
+npm install
+
+# Configurar variables de entorno
+cp .env.example .env.local
+# Editar .env.local con las credenciales de Supabase
+
+# Ejecutar en desarrollo
+npm run dev
+```
+
+### Variables de Entorno Requeridas
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=<tu-url-supabase>
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<tu-anon-key>
+```
 
 ---
 
@@ -63,33 +104,72 @@ Toda la documentación del proyecto se encuentra en la carpeta [`/docs`](./docs/
 
 ```
 ControlPanaderiaApp/
-├── docs/                    # Documentación del proyecto
-│   ├── README.md           # Índice de documentación
-│   ├── 01-VISION_GENERAL.md
-│   ├── 02-REQUERIMIENTOS_FUNCIONALES.md
-│   ├── 03-REQUERIMIENTOS_NO_FUNCIONALES.md
-│   ├── 04-MODELO_DE_DATOS.md
-│   ├── 05-DISEÑO_UI.md
-│   └── 06-GLOSARIO.md
-├── geminicode.md           # Maqueta original del cliente
-└── README.md               # Este archivo
+├── app/                     # Código fuente de la aplicación
+│   ├── app/                # Rutas de Next.js (App Router)
+│   │   ├── (dashboard)/    # Vistas protegidas del dashboard
+│   │   ├── auth/           # Autenticación
+│   │   └── api/            # API routes
+│   ├── components/         # Componentes React
+│   │   ├── ui/            # Componentes UI base
+│   │   ├── pos/           # Terminal de venta
+│   │   ├── reports/       # Reportes y análisis
+│   │   ├── products/      # Gestión de productos
+│   │   ├── expenses/      # Control de gastos
+│   │   └── shifts/        # Gestión de turnos
+│   ├── lib/               # Utilidades y lógica
+│   │   ├── actions/       # Server Actions
+│   │   ├── supabase/      # Cliente Supabase
+│   │   └── types/         # Tipos TypeScript
+│   └── supabase/          # Schema SQL
+├── docs/                   # Documentación del proyecto
+└── README.md              # Este archivo
 ```
 
 ---
 
-## 👥 Equipo
+## 🔧 Mantenimiento
 
-- **Cliente**: Propietario de panadería - Proporcionó maqueta inicial
-- **Ingeniero de Software**: Responsable del desarrollo
+### Reiniciar Datos de Ventas
+
+Para reiniciar solo los datos de ventas (sin afectar productos, categorías o usuarios), ejecutar las siguientes queries en el **SQL Editor de Supabase**:
+
+```sql
+-- ⚠️ ADVERTENCIA: Esto eliminará TODOS los datos de ventas
+
+-- 1. Eliminar items de venta
+DELETE FROM sale_items;
+
+-- 2. Eliminar ventas
+DELETE FROM sales;
+
+-- 3. Eliminar gastos
+DELETE FROM expenses;
+
+-- 4. Eliminar turnos (esto reseteará todo el historial)
+DELETE FROM shifts;
+```
+
+**Opcional**: Si solo quieres eliminar ventas pero mantener turnos y gastos:
+
+```sql
+-- Solo eliminar ventas, mantener turnos
+DELETE FROM sale_items;
+DELETE FROM sales;
+UPDATE shifts SET ventas_no_pan = 0;
+```
+
+### Respaldo de Datos
+
+Antes de cualquier operación de limpieza, se recomienda hacer un respaldo desde el dashboard de Supabase en **Settings > Database > Backups**.
 
 ---
 
 ## 📄 Licencia
 
-*Por definir*
+Proyecto privado - Todos los derechos reservados.
 
 ---
 
 <p align="center">
-  <sub>Proyecto iniciado en Enero 2026</sub>
+  <sub>Proyecto completado en Enero 2026 • En fase de mantenimiento</sub>
 </p>
