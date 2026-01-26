@@ -61,38 +61,69 @@ export async function POST(request: NextRequest) {
 
     const adminClient = getAdminClient();
 
-    // Crear usuario en auth
-    const { data: newUser, error: authError } = await adminClient.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true, // Auto-confirmar email
-    });
+    // Verificar si el usuario ya existe en auth
+    const { data: existingUsers } = await adminClient.auth.admin.listUsers();
+    const existingUser = existingUsers?.users?.find(u => u.email === email);
 
-    if (authError) {
-      return NextResponse.json({ error: authError.message }, { status: 400 });
+    let userId: string;
+
+    if (existingUser) {
+      // Usuario ya existe en auth, verificar si tiene perfil
+      const { data: existingProfile } = await adminClient
+        .from("profiles")
+        .select("id")
+        .eq("id", existingUser.id)
+        .single();
+
+      if (existingProfile) {
+        return NextResponse.json(
+          { error: "Ya existe un usuario con este correo electrónico" },
+          { status: 400 }
+        );
+      }
+
+      // Usuario existe pero sin perfil, usar su ID
+      userId = existingUser.id;
+    } else {
+      // Crear usuario en auth
+      const { data: newUser, error: authError } = await adminClient.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true, // Auto-confirmar email
+      });
+
+      if (authError) {
+        return NextResponse.json({ error: authError.message }, { status: 400 });
+      }
+
+      userId = newUser.user.id;
     }
 
-    // Crear perfil
+    // Crear perfil (usar upsert para evitar duplicados)
     const { error: profileError } = await adminClient
       .from("profiles")
-      .insert({
-        id: newUser.user.id,
+      .upsert({
+        id: userId,
         name,
         username,
         role,
+      }, {
+        onConflict: 'id'
       });
 
     if (profileError) {
-      // Rollback: eliminar usuario de auth si falla el perfil
-      await adminClient.auth.admin.deleteUser(newUser.user.id);
+      // Si el usuario fue recién creado, hacer rollback
+      if (!existingUser) {
+        await adminClient.auth.admin.deleteUser(userId);
+      }
       return NextResponse.json({ error: profileError.message }, { status: 400 });
     }
 
     return NextResponse.json({
       success: true,
       user: {
-        id: newUser.user.id,
-        email: newUser.user.email,
+        id: userId,
+        email,
         name,
         username,
         role,
