@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import type { Shift, Expense, Sale, SaleItem, ReportData } from '@/lib/types/database';
+import type { Shift, Expense, Sale, SaleItem, ReportData, PeriodSalesReport, WeeklyProductSummary } from '@/lib/types/database';
 
 /**
  * Obtiene todos los turnos cerrados para reportes
@@ -254,5 +254,238 @@ export async function getQuickStats(shiftId: string) {
     ventasProductos: totalVentas,
     gastosCaja: totalGastosCaja,
     efectivoEnCaja,
+  };
+}
+
+// =============================================
+// REPORTES SEMANALES Y MENSUALES
+// =============================================
+
+/**
+ * Obtiene las fechas de inicio y fin de la semana actual (lunes a domingo)
+ */
+function getWeekRange(date: Date = new Date()): { start: string; end: string } {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Ajusta para que lunes sea el primer día
+  
+  const monday = new Date(d.setDate(diff));
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  
+  return {
+    start: monday.toISOString().split('T')[0],
+    end: sunday.toISOString().split('T')[0],
+  };
+}
+
+/**
+ * Obtiene las fechas de inicio y fin del mes actual
+ */
+function getMonthRange(date: Date = new Date()): { start: string; end: string } {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  
+  return {
+    start: firstDay.toISOString().split('T')[0],
+    end: lastDay.toISOString().split('T')[0],
+  };
+}
+
+/**
+ * Obtiene el reporte de ventas para un período específico
+ */
+export async function getPeriodSalesReport(
+  periodType: 'week' | 'month',
+  customDate?: Date
+): Promise<PeriodSalesReport | null> {
+  const supabase = await createClient();
+  
+  const dateRange = periodType === 'week' 
+    ? getWeekRange(customDate) 
+    : getMonthRange(customDate);
+  
+  // Obtener todos los turnos cerrados del período
+  const { data: shifts, error: shiftsError } = await supabase
+    .from('shifts')
+    .select('*')
+    .eq('status', 'CLOSED')
+    .gte('date', dateRange.start)
+    .lte('date', dateRange.end)
+    .order('date', { ascending: true });
+  
+  if (shiftsError) {
+    console.error('Error fetching shifts for period:', shiftsError);
+    return null;
+  }
+  
+  if (!shifts || shifts.length === 0) {
+    return {
+      period_start: dateRange.start,
+      period_end: dateRange.end,
+      total_bandejas: 0,
+      venta_pan: 0,
+      venta_no_pan: 0,
+      total_ventas: 0,
+      total_turnos: 0,
+    };
+  }
+  
+  // Calcular totales
+  let totalBandejas = 0;
+  let ventaPan = 0;
+  let ventaNoPan = 0;
+  
+  shifts.forEach((shift: Shift) => {
+    totalBandejas += shift.bandejas_sacadas || 0;
+    ventaNoPan += shift.ventas_no_pan || 0;
+    
+    // Calcular venta de pan basada en bandejas
+    const config = shift.config_snapshot || { kilos_por_bandeja: 20, precio_por_kilo: 1100 };
+    ventaPan += (shift.bandejas_sacadas || 0) * config.kilos_por_bandeja * config.precio_por_kilo;
+  });
+  
+  return {
+    period_start: dateRange.start,
+    period_end: dateRange.end,
+    total_bandejas: totalBandejas,
+    venta_pan: ventaPan,
+    venta_no_pan: ventaNoPan,
+    total_ventas: ventaPan + ventaNoPan,
+    total_turnos: shifts.length,
+  };
+}
+
+/**
+ * Obtiene el resumen diario de ventas de la semana para un producto específico o todos
+ */
+export async function getWeeklyProductSummary(
+  customDate?: Date
+): Promise<WeeklyProductSummary[]> {
+  const supabase = await createClient();
+  const dateRange = getWeekRange(customDate);
+  
+  // Obtener todos los turnos cerrados de la semana
+  const { data: shifts, error: shiftsError } = await supabase
+    .from('shifts')
+    .select('id, date')
+    .eq('status', 'CLOSED')
+    .gte('date', dateRange.start)
+    .lte('date', dateRange.end);
+  
+  if (shiftsError || !shifts || shifts.length === 0) {
+    return [];
+  }
+  
+  const shiftIds = shifts.map(s => s.id);
+  
+  // Obtener todas las ventas de esos turnos
+  const { data: salesData, error: salesError } = await supabase
+    .from('sales')
+    .select(`
+      id,
+      shift_id,
+      sale_items (
+        product_id,
+        product_name,
+        quantity,
+        subtotal
+      )
+    `)
+    .in('shift_id', shiftIds);
+  
+  if (salesError || !salesData) {
+    console.error('Error fetching sales for week:', salesError);
+    return [];
+  }
+  
+  // Crear mapa de shift_id a fecha
+  const shiftDateMap = new Map(shifts.map(s => [s.id, s.date]));
+  
+  // Agrupar ventas por producto y día
+  const productDailyMap = new Map<string, Map<string, { quantity: number; subtotal: number }>>();
+  const productNameMap = new Map<string, string>();
+  
+  salesData.forEach((sale: { id: string; shift_id: string; sale_items?: { product_id: string; product_name: string; quantity: number; subtotal: number }[] }) => {
+    const date = shiftDateMap.get(sale.shift_id);
+    if (!date || !sale.sale_items) return;
+    
+    sale.sale_items.forEach((item) => {
+      if (!item.product_id) return;
+      
+      productNameMap.set(item.product_id, item.product_name);
+      
+      if (!productDailyMap.has(item.product_id)) {
+        productDailyMap.set(item.product_id, new Map());
+      }
+      
+      const dailyMap = productDailyMap.get(item.product_id)!;
+      const current = dailyMap.get(date) || { quantity: 0, subtotal: 0 };
+      dailyMap.set(date, {
+        quantity: current.quantity + item.quantity,
+        subtotal: current.subtotal + item.subtotal,
+      });
+    });
+  });
+  
+  // Generar array de días de la semana
+  const weekDays: { date: string; day_name: string }[] = [];
+  const startDate = new Date(dateRange.start + 'T12:00:00');
+  const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(startDate);
+    d.setDate(startDate.getDate() + i);
+    weekDays.push({
+      date: d.toISOString().split('T')[0],
+      day_name: dayNames[d.getDay()],
+    });
+  }
+  
+  // Construir resultado
+  const result: WeeklyProductSummary[] = [];
+  
+  productDailyMap.forEach((dailyMap, productId) => {
+    const dailySales = weekDays.map(day => {
+      const sale = dailyMap.get(day.date);
+      return {
+        date: day.date,
+        day_name: day.day_name,
+        quantity: sale?.quantity || 0,
+        subtotal: sale?.subtotal || 0,
+      };
+    });
+    
+    const totalQuantity = dailySales.reduce((acc, d) => acc + d.quantity, 0);
+    const totalSubtotal = dailySales.reduce((acc, d) => acc + d.subtotal, 0);
+    
+    result.push({
+      product_id: productId,
+      product_name: productNameMap.get(productId) || 'Producto desconocido',
+      daily_sales: dailySales,
+      total_quantity: totalQuantity,
+      total_subtotal: totalSubtotal,
+    });
+  });
+  
+  // Ordenar por cantidad total vendida (descendente)
+  return result.sort((a, b) => b.total_quantity - a.total_quantity);
+}
+
+/**
+ * Obtiene reportes de ventas comparativos (semana actual, mes actual)
+ */
+export async function getSalesOverview() {
+  const [weeklyReport, monthlyReport] = await Promise.all([
+    getPeriodSalesReport('week'),
+    getPeriodSalesReport('month'),
+  ]);
+  
+  return {
+    weekly: weeklyReport,
+    monthly: monthlyReport,
   };
 }

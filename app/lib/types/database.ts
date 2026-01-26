@@ -282,3 +282,38 @@ export interface ReportData {
 }
 
 export type ReportPeriod = 'day' | 'week' | 'month';
+
+// =============================================
+// TIPOS PARA REPORTES SEMANALES/MENSUALES
+// =============================================
+
+export interface PeriodSalesReport {
+  period_start: string;
+  period_end: string;
+  total_bandejas: number;
+  venta_pan: number;
+  venta_no_pan: number;
+  total_ventas: number;
+  total_turnos: number;
+}
+
+export interface DailyProductSales {
+  date: string;
+  product_name: string;
+  product_id: string;
+  quantity: number;
+  subtotal: number;
+}
+
+export interface WeeklyProductSummary {
+  product_id: string;
+  product_name: string;
+  daily_sales: {
+    date: string;
+    day_name: string;
+    quantity: number;
+    subtotal: number;
+  }[];
+  total_quantity: number;
+  total_subtotal: number;
+}
