@@ -2,12 +2,11 @@
 
 import { useState, useEffect, useTransition } from 'react';
 import { formatMoney } from '@/lib/utils';
-import { DashboardCard } from '@/components/ui/dashboard-card';
 import { LoadingSpinner } from '@/components/ui/loading';
 import { Badge } from '@/components/ui/badge';
 import { 
   Calendar, ChevronDown, ChevronRight, Clock, Package, 
-  ShoppingBag, Trash2, User, TrendingUp, FileText, X
+  ShoppingBag, Trash2, X
 } from 'lucide-react';
 import { 
   getDailyShiftsHistory, 
