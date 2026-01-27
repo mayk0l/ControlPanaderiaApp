@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { getPanConfig, getProfiles } from "@/lib/actions/config";
-import { PanConfigForm, UsersList, ThemeSelector, LogoutButton } from "@/components/config";
+import { PanConfigForm, UsersList, ThemeSelector, LogoutButton, ResetDataButton } from "@/components/config";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -46,6 +46,9 @@ export default async function ConfigPage() {
         
         {/* Usuarios */}
         <UsersList users={users} currentUserId={user?.id} isAdmin={isAdmin} />
+        
+        {/* Zona de peligro - Solo Admin */}
+        <ResetDataButton isAdmin={isAdmin} />
         
         {/* Cerrar Sesión */}
         <LogoutButton />
