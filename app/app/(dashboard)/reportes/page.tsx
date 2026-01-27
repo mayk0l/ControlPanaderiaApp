@@ -1,6 +1,7 @@
 import { Metadata } from "next";
-import { getClosedShifts, getCurrentShiftReport, getSalesOverview } from "@/lib/actions/reports";
-import { ShiftReportViewer, SalesOverview } from "@/components/reports";
+import { getClosedShifts, getCurrentShiftReport, getSalesOverview, getDailyShiftsHistory } from "@/lib/actions/reports";
+import { getCurrentUserProfile } from "@/lib/actions/config";
+import { ShiftReportViewer, SalesOverview, LiveShiftView, DailySalesHistory } from "@/components/reports";
 import { EmptyState } from "@/components/ui/empty-state";
 import { BarChart3 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,13 +12,16 @@ export const metadata: Metadata = {
 };
 
 export default async function ReportsPage() {
-  const [shifts, currentReport, salesOverview] = await Promise.all([
+  const [shifts, currentReport, salesOverview, dailyShifts, userProfile] = await Promise.all([
     getClosedShifts(30),
     getCurrentShiftReport(),
     getSalesOverview(),
+    getDailyShiftsHistory(60),
+    getCurrentUserProfile(),
   ]);
 
-  const hasData = shifts.length > 0;
+  const hasData = shifts.length > 0 || dailyShifts.length > 0;
+  const userRole = userProfile?.role || 'vendedor';
 
   return (
     <div className="animate-fade-in">
@@ -30,34 +34,59 @@ export default async function ReportsPage() {
         </p>
       </header>
 
-      {!hasData ? (
-        <EmptyState
-          icon={BarChart3}
-          title="Sin datos de reportes"
-          description="Completa tu primer turno para ver los reportes de ventas y utilidades"
-        />
-      ) : (
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="overview">Resumen General</TabsTrigger>
-            <TabsTrigger value="shifts">Por Turno</TabsTrigger>
-          </TabsList>
+      <Tabs defaultValue="live" className="space-y-6">
+        <TabsList className="grid w-full max-w-2xl grid-cols-4">
+          <TabsTrigger value="live">🟢 Turno Activo</TabsTrigger>
+          <TabsTrigger value="history">📆 Historial</TabsTrigger>
+          <TabsTrigger value="overview">📊 Resumen</TabsTrigger>
+          <TabsTrigger value="shifts">📋 Por Turno</TabsTrigger>
+        </TabsList>
 
-          <TabsContent value="overview" className="space-y-6">
+        {/* Vista del turno activo en tiempo real */}
+        <TabsContent value="live" className="space-y-6">
+          <LiveShiftView userRole={userRole} />
+        </TabsContent>
+
+        {/* Historial diario de turnos y ventas */}
+        <TabsContent value="history" className="space-y-6">
+          <DailySalesHistory 
+            userRole={userRole} 
+            initialShifts={dailyShifts} 
+          />
+        </TabsContent>
+
+        {/* Resumen semanal y mensual */}
+        <TabsContent value="overview" className="space-y-6">
+          {!hasData ? (
+            <EmptyState
+              icon={BarChart3}
+              title="Sin datos de reportes"
+              description="Completa tu primer turno para ver los reportes de ventas y utilidades"
+            />
+          ) : (
             <SalesOverview 
               initialWeekly={salesOverview.weekly}
               initialMonthly={salesOverview.monthly}
             />
-          </TabsContent>
+          )}
+        </TabsContent>
 
-          <TabsContent value="shifts">
+        {/* Vista detallada por turno */}
+        <TabsContent value="shifts">
+          {!hasData ? (
+            <EmptyState
+              icon={BarChart3}
+              title="Sin datos de reportes"
+              description="Completa tu primer turno para ver los reportes de ventas y utilidades"
+            />
+          ) : (
             <ShiftReportViewer 
               shifts={shifts}
               currentShiftReport={currentReport}
             />
-          </TabsContent>
-        </Tabs>
-      )}
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

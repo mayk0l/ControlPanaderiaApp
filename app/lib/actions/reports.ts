@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { revalidatePath } from 'next/cache';
 import type { Shift, Expense, Sale, SaleItem, ReportData, PeriodSalesReport, WeeklyProductSummary } from '@/lib/types/database';
 
 /**
@@ -488,4 +489,168 @@ export async function getSalesOverview() {
     weekly: weeklyReport,
     monthly: monthlyReport,
   };
+}
+
+// =============================================
+// TURNO ACTIVO Y GESTIÓN DE VENTAS
+// =============================================
+
+/**
+ * Obtiene el turno abierto actual con todas sus ventas
+ */
+export async function getOpenShiftWithSales() {
+  const supabase = await createClient();
+  
+  const today = new Date().toISOString().split('T')[0];
+  
+  // Buscar turno abierto del día
+  const { data: shift, error: shiftError } = await supabase
+    .from('shifts')
+    .select('*')
+    .eq('status', 'OPEN')
+    .eq('date', today)
+    .order('opened_at', { ascending: false })
+    .limit(1)
+    .single();
+  
+  if (shiftError || !shift) {
+    return null;
+  }
+  
+  // Obtener ventas con items
+  const { data: sales } = await supabase
+    .from('sales')
+    .select(`
+      *,
+      sale_items (*)
+    `)
+    .eq('shift_id', shift.id)
+    .order('created_at', { ascending: false });
+  
+  const totalVentas = sales?.reduce((acc, s) => acc + s.total, 0) || 0;
+  const totalProductos = sales?.reduce((acc, s) => {
+    return acc + (s.sale_items?.reduce((sum: number, item: { quantity: number }) => sum + item.quantity, 0) || 0);
+  }, 0) || 0;
+  
+  return {
+    shift,
+    sales: sales || [],
+    totalVentas,
+    totalProductos,
+  };
+}
+
+/**
+ * Eliminar una venta (solo admin)
+ */
+export async function deleteSale(saleId: string) {
+  const supabase = await createClient();
+  
+  // Verificar usuario y rol
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, error: 'No autenticado' };
+  }
+  
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+  
+  if (profile?.role !== 'admin') {
+    return { success: false, error: 'Solo administradores pueden eliminar ventas' };
+  }
+  
+  // Obtener la venta para actualizar el turno
+  const { data: sale, error: saleError } = await supabase
+    .from('sales')
+    .select('shift_id, total')
+    .eq('id', saleId)
+    .single();
+  
+  if (saleError || !sale) {
+    return { success: false, error: 'Venta no encontrada' };
+  }
+  
+  // Eliminar items de la venta primero
+  await supabase
+    .from('sale_items')
+    .delete()
+    .eq('sale_id', saleId);
+  
+  // Eliminar la venta
+  const { error: deleteError } = await supabase
+    .from('sales')
+    .delete()
+    .eq('id', saleId);
+  
+  if (deleteError) {
+    return { success: false, error: deleteError.message };
+  }
+  
+  // Actualizar ventas_no_pan del turno
+  const { data: currentShift } = await supabase
+    .from('shifts')
+    .select('ventas_no_pan')
+    .eq('id', sale.shift_id)
+    .single();
+  
+  if (currentShift) {
+    await supabase
+      .from('shifts')
+      .update({ 
+        ventas_no_pan: Math.max(0, (currentShift.ventas_no_pan || 0) - sale.total) 
+      })
+      .eq('id', sale.shift_id);
+  }
+  
+  revalidatePath('/reportes');
+  revalidatePath('/pos');
+  
+  return { success: true };
+}
+
+/**
+ * Obtiene el historial de turnos por día con sus ventas
+ */
+export async function getDailyShiftsHistory(limit: number = 30) {
+  const supabase = await createClient();
+  
+  // Obtener todos los turnos (abiertos y cerrados) ordenados por fecha
+  const { data: shifts, error } = await supabase
+    .from('shifts')
+    .select('*')
+    .order('date', { ascending: false })
+    .limit(limit);
+  
+  if (error) {
+    console.error('Error fetching shifts history:', error);
+    return [];
+  }
+  
+  return shifts || [];
+}
+
+/**
+ * Obtiene las ventas de un turno específico con detalles de items
+ */
+export async function getShiftSalesWithItems(shiftId: string) {
+  const supabase = await createClient();
+  
+  const { data: sales, error } = await supabase
+    .from('sales')
+    .select(`
+      *,
+      sale_items (*)
+    `)
+    .eq('shift_id', shiftId)
+    .order('created_at', { ascending: false });
+  
+  if (error) {
+    console.error('Error fetching shift sales:', error);
+    return [];
+  }
+  
+  return sales || [];
 }

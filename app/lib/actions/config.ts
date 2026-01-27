@@ -104,3 +104,23 @@ export async function updateUserRole(
   
   return { success: true };
 }
+
+/**
+ * Obtener el usuario actual con su perfil
+ */
+export async function getCurrentUserProfile() {
+  const supabase = await createClient();
+  
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return null;
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+
+  return profile || null;
+}
