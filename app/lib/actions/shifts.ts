@@ -11,7 +11,7 @@ export type ShiftActionResult = {
 };
 
 /**
- * Obtener el turno activo actual
+ * Obtener el turno activo actual (global, no por usuario)
  */
 export async function getCurrentShift(): Promise<ShiftActionResult> {
   const supabase = await createClient();
@@ -21,11 +21,14 @@ export async function getCurrentShift(): Promise<ShiftActionResult> {
     return { success: false, error: "No autenticado" };
   }
 
+  // Buscar cualquier turno abierto del día (no filtrar por usuario)
+  const today = new Date().toISOString().split('T')[0];
+  
   const { data, error } = await supabase
     .from("shifts")
     .select("*")
-    .eq("opened_by", user.id)
     .eq("status", "OPEN")
+    .eq("date", today)
     .order("opened_at", { ascending: false })
     .limit(1)
     .single();
@@ -55,17 +58,19 @@ export async function openShift(openingCash: number): Promise<ShiftActionResult>
     .eq("id", user.id)
     .single();
 
-  // Verificar que no haya un turno abierto
+  // Verificar que no haya un turno abierto en el día (global)
+  const today = new Date().toISOString().split('T')[0];
+  
   const { data: existingShift } = await supabase
     .from("shifts")
-    .select("id")
-    .eq("opened_by", user.id)
+    .select("id, opened_by_name")
     .eq("status", "OPEN")
+    .eq("date", today)
     .limit(1)
     .single();
 
   if (existingShift) {
-    return { success: false, error: "Ya hay un turno abierto" };
+    return { success: false, error: `Ya hay un turno abierto por ${existingShift.opened_by_name}` };
   }
 
   // Obtener configuración actual de pan
@@ -112,12 +117,18 @@ export async function closeShift(
     return { success: false, error: "No autenticado" };
   }
 
-  // Obtener el turno y verificar que pertenece al usuario
+  // Obtener perfil para el nombre de quien cierra
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("name")
+    .eq("id", user.id)
+    .single();
+
+  // Obtener el turno (cualquier turno abierto, no solo del usuario)
   const { data: shift, error: shiftError } = await supabase
     .from("shifts")
     .select("*")
     .eq("id", shiftId)
-    .eq("opened_by", user.id)
     .eq("status", "OPEN")
     .single();
 
@@ -132,6 +143,8 @@ export async function closeShift(
       closed_at: new Date().toISOString(),
       status: "CLOSED",
       closing_data: closingData,
+      closed_by: user.id,
+      closed_by_name: profile?.name || "Usuario",
     })
     .eq("id", shiftId)
     .select()
@@ -162,12 +175,11 @@ export async function updateBandejas(
     return { success: false, error: "No autenticado" };
   }
 
-  // Verificar que el turno está abierto y pertenece al usuario
+  // Verificar que el turno está abierto (cualquier usuario puede actualizar)
   const { data: shift, error: shiftError } = await supabase
     .from("shifts")
     .select("id")
     .eq("id", shiftId)
-    .eq("opened_by", user.id)
     .eq("status", "OPEN")
     .single();
 

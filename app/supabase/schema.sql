@@ -121,6 +121,8 @@ CREATE TABLE IF NOT EXISTS public.shifts (
     
     -- Cierre
     closed_at TIMESTAMPTZ,
+    closed_by UUID REFERENCES public.profiles(id),
+    closed_by_name TEXT,
     closing_data JSONB,
     
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -145,11 +147,14 @@ CREATE TABLE IF NOT EXISTS public.sales (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     shift_id UUID NOT NULL REFERENCES public.shifts(id) ON DELETE CASCADE,
     total NUMERIC(10, 2) NOT NULL DEFAULT 0,
+    sold_by UUID REFERENCES public.profiles(id),
+    sold_by_name TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Índice
 CREATE INDEX IF NOT EXISTS idx_sales_shift ON public.sales(shift_id);
+CREATE INDEX IF NOT EXISTS idx_sales_sold_by ON public.sales(sold_by);
 
 -- =============================================
 -- 8. TABLA DE ITEMS DE VENTA

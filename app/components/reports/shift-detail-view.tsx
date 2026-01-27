@@ -31,7 +31,7 @@ export function ShiftDetailView({ shiftId }: ShiftDetailViewProps) {
     expensesCount: number;
     totalExpenses: number;
     expenses: Array<{ description: string; amount: number; origin: string; created_at: string }>;
-    sales: Array<{ id: string; total: number; created_at: string }>;
+    sales: Array<{ id: string; total: number; created_at: string; sold_by_name?: string | null }>;
   } | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -207,6 +207,11 @@ export function ShiftDetailView({ shiftId }: ShiftDetailViewProps) {
                       <p className="text-xs text-muted-foreground flex items-center gap-1">
                         <Clock size={10} />
                         {formatTime(sale.created_at)}
+                        {sale.sold_by_name && (
+                          <span className="ml-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[9px] font-bold">
+                            {sale.sold_by_name}
+                          </span>
+                        )}
                       </p>
                     </div>
                   </div>

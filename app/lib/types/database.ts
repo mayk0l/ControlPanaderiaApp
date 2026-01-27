@@ -136,6 +136,8 @@ export interface Shift {
   ventas_no_pan: number;
   config_snapshot: PanConfig;
   closed_at: string | null;
+  closed_by: string | null;
+  closed_by_name: string | null;
   closing_data: ClosingData | null;
   created_at: string;
   updated_at: string;
@@ -174,12 +176,16 @@ export interface Sale {
   id: string;
   shift_id: string;
   total: number;
+  sold_by: string | null;
+  sold_by_name: string | null;
   created_at: string;
 }
 
 export interface SaleInsert {
   shift_id: string;
   total: number;
+  sold_by?: string;
+  sold_by_name?: string;
 }
 
 // =============================================

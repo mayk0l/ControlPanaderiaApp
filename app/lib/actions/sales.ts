@@ -24,12 +24,18 @@ export async function createSale(
     return { success: false, error: "No autenticado" };
   }
 
-  // Verificar que el turno está abierto
+  // Obtener perfil para el nombre de quien vende
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("name")
+    .eq("id", user.id)
+    .single();
+
+  // Verificar que el turno está abierto (cualquier usuario puede vender)
   const { data: shift, error: shiftError } = await supabase
     .from("shifts")
     .select("id")
     .eq("id", shiftId)
-    .eq("opened_by", user.id)
     .eq("status", "OPEN")
     .single();
 
@@ -40,12 +46,14 @@ export async function createSale(
   // Calcular total
   const total = items.reduce((sum, item) => sum + item.subtotal, 0);
 
-  // Crear la venta
+  // Crear la venta con información del vendedor
   const { data: sale, error: saleError } = await supabase
     .from("sales")
     .insert({
       shift_id: shiftId,
       total: total,
+      sold_by: user.id,
+      sold_by_name: profile?.name || "Usuario",
     })
     .select()
     .single();
