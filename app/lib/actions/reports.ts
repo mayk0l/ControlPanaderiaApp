@@ -196,12 +196,13 @@ export async function calculateShiftReport(shiftId: string): Promise<ReportData 
 export async function getCurrentShiftReport() {
   const supabase = await createClient();
   
-  const today = new Date().toISOString().split('T')[0];
-  
+  // Buscar cualquier turno abierto (sin filtrar por fecha)
   const { data: shift, error } = await supabase
     .from('shifts')
     .select('*')
-    .eq('date', today)
+    .eq('status', 'OPEN')
+    .order('opened_at', { ascending: false })
+    .limit(1)
     .single();
   
   if (error || !shift) {
@@ -501,14 +502,11 @@ export async function getSalesOverview() {
 export async function getOpenShiftWithSales() {
   const supabase = await createClient();
   
-  const today = new Date().toISOString().split('T')[0];
-  
-  // Buscar turno abierto del día
+  // Buscar cualquier turno abierto (sin filtrar por fecha para permitir turnos que cruzan medianoche)
   const { data: shift, error: shiftError } = await supabase
     .from('shifts')
     .select('*')
     .eq('status', 'OPEN')
-    .eq('date', today)
     .order('opened_at', { ascending: false })
     .limit(1)
     .single();

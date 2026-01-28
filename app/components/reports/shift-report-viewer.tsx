@@ -3,6 +3,7 @@
 import { useState, useEffect, useTransition } from 'react';
 import type { Shift, ReportData } from '@/lib/types/database';
 import { calculateShiftReport } from '@/lib/actions/reports';
+import { formatChileDate } from '@/lib/utils';
 import { ShiftSelector } from './shift-selector';
 import { ReportSummary } from './report-card';
 import { ShiftDetailView } from './shift-detail-view';
@@ -62,11 +63,12 @@ export function ShiftReportViewer({ shifts }: ShiftReportViewerProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-xl font-bold">
-                    Reporte del {new Date(selectedShift.date + 'T12:00:00').toLocaleDateString('es-CL', {
+                    Reporte del {formatChileDate(selectedShift.date + 'T12:00:00', {
                       weekday: 'long',
                       day: 'numeric',
                       month: 'long',
-                      year: 'numeric'
+                      year: 'numeric',
+                      timeZone: 'America/Santiago'
                     })}
                   </h2>
                   <p className="text-sm text-muted-foreground">

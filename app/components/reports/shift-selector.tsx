@@ -1,8 +1,7 @@
 'use client';
 
 import type { Shift } from '@/lib/types/database';
-import { formatMoney } from '@/lib/utils';
-import { cn } from '@/lib/utils';
+import { formatMoney, formatChileDate, formatChileTime, cn } from '@/lib/utils';
 import { Clock, User, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
 
 interface ShiftSelectorProps {
@@ -13,20 +12,17 @@ interface ShiftSelectorProps {
 
 export function ShiftSelector({ shifts, selectedId, onSelect }: ShiftSelectorProps) {
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr + 'T12:00:00');
-    return date.toLocaleDateString('es-CL', {
+    return formatChileDate(dateStr + 'T12:00:00', {
       weekday: 'short',
       day: 'numeric',
       month: 'short',
+      timeZone: 'America/Santiago'
     });
   };
 
   const formatTime = (dateStr: string | null) => {
     if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleTimeString('es-CL', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    return formatChileTime(dateStr);
   };
 
   if (shifts.length === 0) {

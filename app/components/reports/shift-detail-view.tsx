@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { getProductsSoldDetail, getShiftWithDetails } from '@/lib/actions/reports';
-import { formatMoney } from '@/lib/utils';
+import { formatMoney, formatChileTime } from '@/lib/utils';
 import { DashboardCard } from '@/components/ui/dashboard-card';
 import { LoadingSpinner } from '@/components/ui/loading';
 import { 
@@ -61,13 +61,6 @@ export function ShiftDetailView({ shiftId }: ShiftDetailViewProps) {
     
     loadData();
   }, [shiftId]);
-
-  const formatTime = (dateStr: string) => {
-    return new Date(dateStr).toLocaleTimeString('es-CL', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
 
   if (loading) {
     return (
@@ -206,7 +199,7 @@ export function ShiftDetailView({ shiftId }: ShiftDetailViewProps) {
                       <p className="font-medium text-sm">Venta #{shiftData.sales.length - idx}</p>
                       <p className="text-xs text-muted-foreground flex items-center gap-1">
                         <Clock size={10} />
-                        {formatTime(sale.created_at)}
+                        {formatChileTime(sale.created_at)}
                         {sale.sold_by_name && (
                           <span className="ml-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[9px] font-bold">
                             {sale.sold_by_name}
@@ -246,7 +239,7 @@ export function ShiftDetailView({ shiftId }: ShiftDetailViewProps) {
                       </p>
                       <p className="text-xs text-muted-foreground flex items-center gap-2">
                         <Clock size={10} />
-                        {formatTime(expense.created_at)}
+                        {formatChileTime(expense.created_at)}
                         <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
                           expense.origin === 'PAN' 
                             ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'

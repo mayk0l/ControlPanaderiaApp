@@ -3,7 +3,7 @@
 import { useState, useEffect, useTransition } from 'react';
 import { getSalesOverview, getWeeklyProductSummary } from '@/lib/actions/reports';
 import type { PeriodSalesReport, WeeklyProductSummary } from '@/lib/types/database';
-import { formatMoney, cn } from '@/lib/utils';
+import { formatMoney, formatChileDate, cn } from '@/lib/utils';
 import { 
   Calendar, 
   CalendarDays, 
@@ -21,12 +21,13 @@ interface SalesOverviewProps {
 }
 
 function formatDateRange(start: string, end: string): string {
-  const startDate = new Date(start + 'T12:00:00');
-  const endDate = new Date(end + 'T12:00:00');
+  const options: Intl.DateTimeFormatOptions = { 
+    day: 'numeric', 
+    month: 'short',
+    timeZone: 'America/Santiago'
+  };
   
-  const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' };
-  
-  return `${startDate.toLocaleDateString('es-CL', options)} - ${endDate.toLocaleDateString('es-CL', options)}`;
+  return `${formatChileDate(start + 'T12:00:00', options)} - ${formatChileDate(end + 'T12:00:00', options)}`;
 }
 
 function PeriodCard({ 

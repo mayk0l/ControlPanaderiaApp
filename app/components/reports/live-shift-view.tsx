@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useTransition } from 'react';
-import { formatMoney } from '@/lib/utils';
+import { formatMoney, formatChileTime, formatChileDate } from '@/lib/utils';
 import { DashboardCard } from '@/components/ui/dashboard-card';
 import { LoadingSpinner } from '@/components/ui/loading';
 import { Badge } from '@/components/ui/badge';
@@ -81,13 +81,6 @@ export function LiveShiftView({ userRole = 'vendedor' }: LiveShiftViewProps) {
     });
   };
 
-  const formatTime = (dateStr: string) => {
-    return new Date(dateStr).toLocaleTimeString('es-CL', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -126,10 +119,11 @@ export function LiveShiftView({ userRole = 'vendedor' }: LiveShiftViewProps) {
           </div>
           <p className="text-sm text-muted-foreground mt-1">
             Abierto por <strong>{shift.opened_by_name || 'Usuario'}</strong> a las{' '}
-            {formatTime(shift.opened_at)} • {new Date(shift.date + 'T12:00:00').toLocaleDateString('es-CL', {
+            {formatChileTime(shift.opened_at)} • {formatChileDate(shift.date + 'T12:00:00', {
               weekday: 'long',
               day: 'numeric',
-              month: 'long'
+              month: 'long',
+              timeZone: 'America/Santiago'
             })}
           </p>
         </div>
@@ -235,7 +229,7 @@ export function LiveShiftView({ userRole = 'vendedor' }: LiveShiftViewProps) {
                       </div>
                       <p className="text-xs text-muted-foreground flex items-center gap-1">
                         <Clock size={10} />
-                        {formatTime(sale.created_at)}
+                        {formatChileTime(sale.created_at)}
                         <span className="ml-2">• {sale.sale_items.length} items</span>
                       </p>
                     </div>

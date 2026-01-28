@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
-import { formatMoney } from '@/lib/utils';
+import { formatMoney, formatChileTime, formatChileDate } from '@/lib/utils';
 import { LoadingSpinner } from '@/components/ui/loading';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -86,18 +86,12 @@ export function DailySalesHistory({ userRole = 'vendedor', initialShifts }: Dail
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr + 'T12:00:00').toLocaleDateString('es-CL', {
+    return formatChileDate(dateStr + 'T12:00:00', {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
-      year: 'numeric'
-    });
-  };
-
-  const formatTime = (dateStr: string) => {
-    return new Date(dateStr).toLocaleTimeString('es-CL', {
-      hour: '2-digit',
-      minute: '2-digit',
+      year: 'numeric',
+      timeZone: 'America/Santiago'
     });
   };
 
@@ -213,9 +207,9 @@ export function DailySalesHistory({ userRole = 'vendedor', initialShifts }: Dail
                               </div>
                               <p className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
                                 <Clock size={12} />
-                                {formatTime(shift.opened_at)}
+                                {formatChileTime(shift.opened_at)}
                                 {shift.closed_at && (
-                                  <span> - {formatTime(shift.closed_at)}</span>
+                                  <span> - {formatChileTime(shift.closed_at)}</span>
                                 )}
                                 <span className="mx-1">•</span>
                                 <Package size={12} />
@@ -285,7 +279,7 @@ export function DailySalesHistory({ userRole = 'vendedor', initialShifts }: Dail
                                         </div>
                                         <p className="text-xs text-muted-foreground flex items-center gap-1">
                                           <Clock size={10} />
-                                          {formatTime(sale.created_at)}
+                                          {formatChileTime(sale.created_at)}
                                           <span className="ml-1">• {sale.sale_items.length} items</span>
                                         </p>
                                       </div>
@@ -338,7 +332,7 @@ export function DailySalesHistory({ userRole = 'vendedor', initialShifts }: Dail
               <div>
                 <h3 className="font-bold">Detalle de Venta</h3>
                 <p className="text-xs text-muted-foreground">
-                  {formatTime(selectedSale.created_at)}
+                  {formatChileTime(selectedSale.created_at)}
                   {selectedSale.sold_by_name && ` • ${selectedSale.sold_by_name}`}
                 </p>
               </div>

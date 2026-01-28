@@ -24,14 +24,11 @@ export default async function POSPage() {
     redirect("/auth/login");
   }
 
-  // Obtener turno activo del día (global, no por usuario)
-  const today = new Date().toISOString().split('T')[0];
-  
+  // Obtener turno activo (sin filtrar por fecha para permitir turnos que cruzan medianoche)
   const { data: currentShift } = await supabase
     .from("shifts")
     .select("*")
     .eq("status", "OPEN")
-    .eq("date", today)
     .order("opened_at", { ascending: false })
     .limit(1)
     .single();

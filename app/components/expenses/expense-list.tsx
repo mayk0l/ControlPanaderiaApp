@@ -6,6 +6,7 @@ import { DashboardCard } from "@/components/ui/dashboard-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { deleteExpense } from "@/lib/actions/expenses";
+import { formatMoney, formatChileTime } from "@/lib/utils";
 import { Expense, ExpenseOrigin } from "@/lib/types/database";
 import { useRouter } from "next/navigation";
 import { Trash2, Receipt } from "lucide-react";
@@ -24,21 +25,6 @@ const ORIGIN_CONFIG: Record<ExpenseOrigin, { label: string; emoji: string; varia
 export function ExpenseList({ expenses, showHistorical = false }: ExpenseListProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("es-CL", {
-      style: "currency",
-      currency: "CLP",
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString("es-CL", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
 
   const handleDelete = (expenseId: string) => {
     if (!confirm("¿Estás seguro de eliminar este gasto?")) return;
@@ -70,19 +56,19 @@ export function ExpenseList({ expenses, showHistorical = false }: ExpenseListPro
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <div className="p-3 bg-muted/50 rounded-xl text-center">
           <p className="text-xs text-muted-foreground mb-1">💵 Caja</p>
-          <p className="font-bold text-destructive">{formatCurrency(totalGeneral)}</p>
+          <p className="font-bold text-destructive">{formatMoney(totalGeneral)}</p>
         </div>
         <div className="p-3 bg-muted/50 rounded-xl text-center">
           <p className="text-xs text-muted-foreground mb-1">🍞 Pan</p>
-          <p className="font-bold text-warning">{formatCurrency(totalPan)}</p>
+          <p className="font-bold text-warning">{formatMoney(totalPan)}</p>
         </div>
         <div className="p-3 bg-muted/50 rounded-xl text-center">
           <p className="text-xs text-muted-foreground mb-1">📦 No Pan</p>
-          <p className="font-bold">{formatCurrency(totalNoPan)}</p>
+          <p className="font-bold">{formatMoney(totalNoPan)}</p>
         </div>
         <div className="p-3 bg-destructive/10 rounded-xl text-center border border-destructive/20">
           <p className="text-xs text-muted-foreground mb-1">Total</p>
-          <p className="font-bold text-destructive">{formatCurrency(total)}</p>
+          <p className="font-bold text-destructive">{formatMoney(total)}</p>
         </div>
       </div>
 
@@ -108,7 +94,7 @@ export function ExpenseList({ expenses, showHistorical = false }: ExpenseListPro
                   <p className="font-medium text-sm truncate">{expense.description}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="text-xs text-muted-foreground">
-                      {formatTime(expense.created_at)}
+                      {formatChileTime(expense.created_at)}
                     </span>
                     <Badge variant={config.variant} className="text-[10px]">
                       {config.label}
@@ -117,7 +103,7 @@ export function ExpenseList({ expenses, showHistorical = false }: ExpenseListPro
                 </div>
                 
                 <p className="font-bold text-destructive whitespace-nowrap">
-                  -{formatCurrency(expense.amount)}
+                  -{formatMoney(expense.amount)}
                 </p>
                 
                 {!showHistorical && (

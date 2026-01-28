@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { getChileDateString } from "@/lib/utils";
 import { Shift, ClosingData } from "@/lib/types/database";
 
 export type ShiftActionResult = {
@@ -21,14 +22,11 @@ export async function getCurrentShift(): Promise<ShiftActionResult> {
     return { success: false, error: "No autenticado" };
   }
 
-  // Buscar cualquier turno abierto del día (no filtrar por usuario)
-  const today = new Date().toISOString().split('T')[0];
-  
+  // Buscar cualquier turno abierto (sin filtrar por fecha para permitir turnos que cruzan medianoche)
   const { data, error } = await supabase
     .from("shifts")
     .select("*")
     .eq("status", "OPEN")
-    .eq("date", today)
     .order("opened_at", { ascending: false })
     .limit(1)
     .single();
@@ -58,14 +56,11 @@ export async function openShift(openingCash: number): Promise<ShiftActionResult>
     .eq("id", user.id)
     .single();
 
-  // Verificar que no haya un turno abierto en el día (global)
-  const today = new Date().toISOString().split('T')[0];
-  
+  // Verificar que no haya ningún turno abierto (sin importar la fecha)
   const { data: existingShift } = await supabase
     .from("shifts")
-    .select("id, opened_by_name")
+    .select("id, opened_by_name, date")
     .eq("status", "OPEN")
-    .eq("date", today)
     .limit(1)
     .single();
 
@@ -83,6 +78,7 @@ export async function openShift(openingCash: number): Promise<ShiftActionResult>
   const { data, error } = await supabase
     .from("shifts")
     .insert({
+      date: getChileDateString(), // Fecha en zona horaria de Chile
       opened_by: user.id,
       opened_by_name: profile?.name || "Usuario",
       opening_cash: openingCash,
