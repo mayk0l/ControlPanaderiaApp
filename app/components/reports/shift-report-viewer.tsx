@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import type { Shift, ReportData } from '@/lib/types/database';
 import { calculateShiftReport } from '@/lib/actions/reports';
 import { formatChileDate } from '@/lib/utils';
@@ -13,15 +14,22 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 interface ShiftReportViewerProps {
   shifts: Shift[];
   currentShiftReport?: ReportData | null;
+  userRole?: string;
 }
 
-export function ShiftReportViewer({ shifts }: ShiftReportViewerProps) {
+export function ShiftReportViewer({ shifts, userRole = 'vendedor' }: ShiftReportViewerProps) {
+  const router = useRouter();
+  const [localShifts, setLocalShifts] = useState<Shift[]>(shifts);
   const [selectedShiftId, setSelectedShiftId] = useState<string | null>(
     shifts.length > 0 ? shifts[0].id : null
   );
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [showDetails, setShowDetails] = useState(true);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    setLocalShifts(shifts);
+  }, [shifts]);
 
   useEffect(() => {
     if (selectedShiftId) {
@@ -36,16 +44,33 @@ export function ShiftReportViewer({ shifts }: ShiftReportViewerProps) {
     setSelectedShiftId(shiftId);
   };
 
-  const selectedShift = shifts.find(s => s.id === selectedShiftId);
+  const handleShiftDeleted = () => {
+    // Actualizar lista local y seleccionar otro turno
+    setLocalShifts(prev => {
+      const newShifts = prev.filter(s => s.id !== selectedShiftId);
+      if (newShifts.length > 0) {
+        setSelectedShiftId(newShifts[0].id);
+      } else {
+        setSelectedShiftId(null);
+        setReportData(null);
+      }
+      return newShifts;
+    });
+    router.refresh();
+  };
+
+  const selectedShift = localShifts.find(s => s.id === selectedShiftId);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
       {/* Sidebar con selector de turnos */}
       <div className="lg:col-span-1">
         <ShiftSelector 
-          shifts={shifts}
+          shifts={localShifts}
           selectedId={selectedShiftId}
           onSelect={handleSelectShift}
+          onShiftDeleted={handleShiftDeleted}
+          userRole={userRole}
         />
       </div>
 

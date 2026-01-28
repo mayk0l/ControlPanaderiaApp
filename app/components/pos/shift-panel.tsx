@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useRef, useCallback, useEffect } from 'react';
 import { DashboardCard } from '@/components/ui/dashboard-card';
 import { Button } from '@/components/ui/button';
 import { Shift, PanConfig } from '@/lib/types/database';
@@ -38,24 +38,82 @@ export function ShiftPanel({ shift, panConfig, stats }: ShiftPanelProps) {
   const [isPending, startTransition] = useTransition();
   const [modalMode, setModalMode] = useState<'open' | 'close' | null>(null);
   const [openingCashInput, setOpeningCashInput] = useState('');
+  const [localBandejas, setLocalBandejas] = useState(shift?.bandejas_sacadas || 0);
   const [closingData, setClosingData] = useState({
     countedCash: '',
     panAdjustment: '',
     panReason: '',
   });
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingOps = useRef(0);
+
+  // Sincronizar bandejas cuando cambia el shift (ej: al recargar página)
+  useEffect(() => {
+    if (shift?.bandejas_sacadas !== undefined) {
+      setLocalBandejas(shift.bandejas_sacadas);
+    }
+  }, [shift?.id, shift?.bandejas_sacadas]);
 
   const isShiftOpen = shift?.status === 'OPEN';
 
-  // Calcular valores de pan
-  const bandejas = shift?.bandejas_sacadas || 0;
+  // Sincronizar bandejas locales con el shift
+  const bandejas = localBandejas;
   const kilosEstimados = bandejas * panConfig.kilos_por_bandeja;
   const ventaPanEstimada = kilosEstimados * panConfig.precio_por_kilo;
 
-  const handleUpdateBandejas = (newValue: number) => {
+  // Función para incrementar con update optimista
+  const doIncrement = useCallback(() => {
     if (!shift) return;
+    setLocalBandejas(prev => prev + 1);
+    pendingOps.current++;
     startTransition(async () => {
+      const newValue = localBandejas + 1;
       await updateBandejas(shift.id, newValue);
+      pendingOps.current--;
     });
+  }, [shift, localBandejas]);
+
+  // Función para decrementar con update optimista
+  const doDecrement = useCallback(() => {
+    if (!shift || localBandejas <= 0) return;
+    setLocalBandejas(prev => Math.max(0, prev - 1));
+    pendingOps.current++;
+    startTransition(async () => {
+      const newValue = Math.max(0, localBandejas - 1);
+      await updateBandejas(shift.id, newValue);
+      pendingOps.current--;
+    });
+  }, [shift, localBandejas]);
+
+  // Mantener presionado para agregar/quitar rápido
+  const startHold = (action: 'increment' | 'decrement') => {
+    // Ejecutar una vez inmediatamente
+    if (action === 'increment') {
+      doIncrement();
+    } else {
+      doDecrement();
+    }
+    
+    // Iniciar repetición después de 300ms, cada 100ms
+    const startRepeat = setTimeout(() => {
+      intervalRef.current = setInterval(() => {
+        if (action === 'increment') {
+          doIncrement();
+        } else {
+          doDecrement();
+        }
+      }, 100);
+    }, 300);
+    
+    intervalRef.current = startRepeat as unknown as NodeJS.Timeout;
+  };
+
+  const stopHold = () => {
+    if (intervalRef.current) {
+      clearTimeout(intervalRef.current);
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
   };
 
   const handleOpenShift = () => {
@@ -114,9 +172,13 @@ export function ShiftPanel({ shift, panConfig, stats }: ShiftPanelProps) {
         <DashboardCard title="Bandejas de PAN" borderColor="orange">
           <div className="flex items-center justify-center gap-8 py-6">
             <button
-              onClick={() => handleUpdateBandejas(Math.max(0, bandejas - 1))}
-              disabled={!isShiftOpen || isPending}
-              className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground hover:bg-muted/80 active:scale-90 transition-transform disabled:opacity-50"
+              onMouseDown={() => startHold('decrement')}
+              onMouseUp={stopHold}
+              onMouseLeave={stopHold}
+              onTouchStart={() => startHold('decrement')}
+              onTouchEnd={stopHold}
+              disabled={!isShiftOpen || bandejas <= 0}
+              className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground hover:bg-muted/80 active:scale-90 transition-transform disabled:opacity-50 select-none touch-none"
             >
               <Minus size={32} />
             </button>
@@ -129,9 +191,13 @@ export function ShiftPanel({ shift, panConfig, stats }: ShiftPanelProps) {
             </div>
 
             <button
-              onClick={() => handleUpdateBandejas(bandejas + 1)}
-              disabled={!isShiftOpen || isPending}
-              className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground hover:bg-primary/90 active:scale-90 transition-transform shadow-lg disabled:opacity-50"
+              onMouseDown={() => startHold('increment')}
+              onMouseUp={stopHold}
+              onMouseLeave={stopHold}
+              onTouchStart={() => startHold('increment')}
+              onTouchEnd={stopHold}
+              disabled={!isShiftOpen}
+              className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground hover:bg-primary/90 active:scale-90 transition-transform shadow-lg disabled:opacity-50 select-none touch-none"
             >
               <Plus size={32} />
             </button>

@@ -83,6 +83,7 @@ export default async function ReportsPage() {
             <ShiftReportViewer 
               shifts={shifts}
               currentShiftReport={currentReport}
+              userRole={userRole}
             />
           )}
         </TabsContent>

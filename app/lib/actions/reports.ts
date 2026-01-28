@@ -652,3 +652,81 @@ export async function getShiftSalesWithItems(shiftId: string) {
   
   return sales || [];
 }
+
+/**
+ * Eliminar un turno completo (solo admin)
+ * Esto elimina el turno y todos sus datos asociados (ventas, items, gastos)
+ */
+export async function deleteShift(shiftId: string) {
+  const supabase = await createClient();
+  
+  // Verificar usuario y rol
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, error: 'No autenticado' };
+  }
+  
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+  
+  if (profile?.role !== 'admin') {
+    return { success: false, error: 'Solo administradores pueden eliminar turnos' };
+  }
+  
+  // Verificar que el turno existe
+  const { data: shift, error: shiftError } = await supabase
+    .from('shifts')
+    .select('id, status, date, opened_by_name')
+    .eq('id', shiftId)
+    .single();
+  
+  if (shiftError || !shift) {
+    return { success: false, error: 'Turno no encontrado' };
+  }
+  
+  // Obtener todas las ventas del turno
+  const { data: sales } = await supabase
+    .from('sales')
+    .select('id')
+    .eq('shift_id', shiftId);
+  
+  // Eliminar items de todas las ventas
+  if (sales && sales.length > 0) {
+    const saleIds = sales.map(s => s.id);
+    await supabase
+      .from('sale_items')
+      .delete()
+      .in('sale_id', saleIds);
+  }
+  
+  // Eliminar ventas del turno
+  await supabase
+    .from('sales')
+    .delete()
+    .eq('shift_id', shiftId);
+  
+  // Eliminar gastos del turno
+  await supabase
+    .from('expenses')
+    .delete()
+    .eq('shift_id', shiftId);
+  
+  // Eliminar el turno
+  const { error: deleteError } = await supabase
+    .from('shifts')
+    .delete()
+    .eq('id', shiftId);
+  
+  if (deleteError) {
+    return { success: false, error: deleteError.message };
+  }
+  
+  revalidatePath('/reportes');
+  revalidatePath('/pos');
+  revalidatePath('/gastos');
+  
+  return { success: true };
+}

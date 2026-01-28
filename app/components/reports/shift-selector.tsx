@@ -1,16 +1,22 @@
 'use client';
 
+import { useTransition } from 'react';
 import type { Shift } from '@/lib/types/database';
 import { formatMoney, formatChileDate, formatChileTime, cn } from '@/lib/utils';
-import { Clock, User, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
+import { deleteShift } from '@/lib/actions/reports';
+import { Clock, User, DollarSign, TrendingUp, TrendingDown, Trash2, Loader2 } from 'lucide-react';
 
 interface ShiftSelectorProps {
   shifts: Shift[];
   selectedId: string | null;
   onSelect: (shiftId: string) => void;
+  onShiftDeleted?: () => void;
+  userRole?: string;
 }
 
-export function ShiftSelector({ shifts, selectedId, onSelect }: ShiftSelectorProps) {
+export function ShiftSelector({ shifts, selectedId, onSelect, onShiftDeleted, userRole = 'vendedor' }: ShiftSelectorProps) {
+  const [isPending, startTransition] = useTransition();
+  
   const formatDate = (dateStr: string) => {
     return formatChileDate(dateStr + 'T12:00:00', {
       weekday: 'short',
@@ -23,6 +29,23 @@ export function ShiftSelector({ shifts, selectedId, onSelect }: ShiftSelectorPro
   const formatTime = (dateStr: string | null) => {
     if (!dateStr) return '-';
     return formatChileTime(dateStr);
+  };
+
+  const handleDeleteShift = async (e: React.MouseEvent, shiftId: string, shiftDate: string) => {
+    e.stopPropagation();
+    
+    if (!confirm(`¿Eliminar turno del ${formatDate(shiftDate)}?\n\nEsto eliminará TODAS las ventas y gastos asociados a este turno. Esta acción no se puede deshacer.`)) {
+      return;
+    }
+    
+    startTransition(async () => {
+      const result = await deleteShift(shiftId);
+      if (result.success) {
+        onShiftDeleted?.();
+      } else {
+        alert(result.error || 'Error al eliminar el turno');
+      }
+    });
   };
 
   if (shifts.length === 0) {
@@ -72,6 +95,21 @@ export function ShiftSelector({ shifts, selectedId, onSelect }: ShiftSelectorPro
                     Venta total
                   </p>
                 </div>
+                {/* Botón eliminar turno - solo admin */}
+                {userRole === 'admin' && (
+                  <button
+                    onClick={(e) => handleDeleteShift(e, shift.id, shift.date)}
+                    disabled={isPending}
+                    className="ml-2 p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors disabled:opacity-50"
+                    title="Eliminar turno"
+                  >
+                    {isPending ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Trash2 size={14} />
+                    )}
+                  </button>
+                )}
               </div>
 
               {/* Detalles adicionales */}

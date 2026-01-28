@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { DashboardCard } from "@/components/ui/dashboard-card";
 import { incrementBandejas, decrementBandejas } from "@/lib/actions/bandejas";
@@ -15,6 +15,8 @@ interface BandejaCounterProps {
 export function BandejaCounter({ shift }: BandejaCounterProps) {
   const [count, setCount] = useState(shift.bandejas_sacadas || 0);
   const [isPending, startTransition] = useTransition();
+  const pendingOps = useRef(0);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const config = shift.config_snapshot as PanConfig;
   const kilosPorBandeja = config?.kilos_por_bandeja || 3.2;
@@ -31,25 +33,67 @@ export function BandejaCounter({ shift }: BandejaCounterProps) {
     }).format(amount);
   };
 
-  const handleIncrement = () => {
+  // Función para incrementar con update optimista
+  const doIncrement = useCallback(() => {
     setCount(prev => prev + 1);
+    pendingOps.current++;
     startTransition(async () => {
       const result = await incrementBandejas(shift.id);
-      if (!result.success) {
-        setCount(prev => prev - 1); // Revert on error
+      pendingOps.current--;
+      if (!result.success && pendingOps.current === 0) {
+        // Recargar el valor real si todas las operaciones fallaron
+        setCount(shift.bandejas_sacadas || 0);
       }
     });
-  };
+  }, [shift.id, shift.bandejas_sacadas]);
 
-  const handleDecrement = () => {
+  // Función para decrementar con update optimista
+  const doDecrement = useCallback(() => {
+    setCount(prev => {
+      if (prev <= 0) return prev;
+      return prev - 1;
+    });
     if (count <= 0) return;
-    setCount(prev => prev - 1);
+    
+    pendingOps.current++;
     startTransition(async () => {
       const result = await decrementBandejas(shift.id);
-      if (!result.success) {
-        setCount(prev => prev + 1); // Revert on error
+      pendingOps.current--;
+      if (!result.success && pendingOps.current === 0) {
+        setCount(shift.bandejas_sacadas || 0);
       }
     });
+  }, [shift.id, shift.bandejas_sacadas, count]);
+
+  // Mantener presionado para agregar/quitar rápido
+  const startHold = (action: 'increment' | 'decrement') => {
+    // Ejecutar una vez inmediatamente
+    if (action === 'increment') {
+      doIncrement();
+    } else {
+      doDecrement();
+    }
+    
+    // Iniciar repetición después de 300ms, cada 100ms
+    const startRepeat = setTimeout(() => {
+      intervalRef.current = setInterval(() => {
+        if (action === 'increment') {
+          doIncrement();
+        } else {
+          doDecrement();
+        }
+      }, 100);
+    }, 300);
+    
+    intervalRef.current = startRepeat as unknown as NodeJS.Timeout;
+  };
+
+  const stopHold = () => {
+    if (intervalRef.current) {
+      clearTimeout(intervalRef.current);
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
   };
 
   return (
@@ -64,17 +108,21 @@ export function BandejaCounter({ shift }: BandejaCounterProps) {
           <Button
             variant="outline"
             size="xl"
-            onClick={handleDecrement}
-            disabled={count <= 0 || isPending}
-            className="rounded-full h-16 w-16"
+            onMouseDown={() => startHold('decrement')}
+            onMouseUp={stopHold}
+            onMouseLeave={stopHold}
+            onTouchStart={() => startHold('decrement')}
+            onTouchEnd={stopHold}
+            disabled={count <= 0}
+            className="rounded-full h-16 w-16 select-none touch-none"
           >
             <Minus className="h-8 w-8" />
           </Button>
           
           <div className="text-center min-w-[120px]">
             <div className={cn(
-              "text-6xl font-black tabular-nums transition-all",
-              isPending && "opacity-50"
+              "text-6xl font-black tabular-nums transition-opacity duration-75",
+              isPending && pendingOps.current > 2 && "opacity-70"
             )}>
               {count}
             </div>
@@ -86,9 +134,12 @@ export function BandejaCounter({ shift }: BandejaCounterProps) {
           <Button
             variant="default"
             size="xl"
-            onClick={handleIncrement}
-            disabled={isPending}
-            className="rounded-full h-16 w-16 bg-orange-500 hover:bg-orange-600"
+            onMouseDown={() => startHold('increment')}
+            onMouseUp={stopHold}
+            onMouseLeave={stopHold}
+            onTouchStart={() => startHold('increment')}
+            onTouchEnd={stopHold}
+            className="rounded-full h-16 w-16 bg-orange-500 hover:bg-orange-600 select-none touch-none"
           >
             <Plus className="h-8 w-8" />
           </Button>
